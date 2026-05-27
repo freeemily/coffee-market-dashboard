@@ -7,9 +7,7 @@ export default defineConfig({
   server: {
 
     preview: {
-      allowedHosts: [
-        'coffee-market-dashboard-production-4b88.up.railway.app'
-      ]
+      allowedHosts: 'all'
     }
   }
 })
