@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
-const WEB_BACKEND_URL = 'https://coffee-market-dashboard.up.railway.app';
+const WEB_BACKEND_URL = 'https://coffee-market-dashboard-production.up.railway.app';
 
 export default function App() {
   const [dbData, setDbData] = useState(null);

@@ -5,7 +5,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 const NEWS_PIPELINE_URL = 'http://34.50.27.50:8000';
 
 app.get('/api/dashboard', async (req, res) => {
