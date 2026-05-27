@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
+// 파일 상단 변수 선언 부분
 const WEB_BACKEND_URL = 'https://coffee-market-dashboard-production.up.railway.app';
 
 export default function App() {
