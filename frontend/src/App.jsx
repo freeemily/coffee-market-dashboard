@@ -1,5 +1,3 @@
-// App.jsx
-
 import { useEffect, useState } from "react";
 import "./App.css";
 
@@ -11,6 +9,9 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResult, setSearchResult] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [activeInsight, setActiveInsight] =
+    useState("feature");
 
   useEffect(() => {
     loadDashboard();
@@ -55,147 +56,192 @@ export default function App() {
   if (loading) {
     return (
       <div className="loading">
-        데이터를 불러오는 중...
+        Loading Dashboard...
       </div>
     );
   }
 
-  const market = dashboard?.market || {};
+  const marketSnapshot =
+    dashboard?.marketSnapshot || {};
 
-  const signal = market.signal || {};
+  const market =
+    dashboard?.market || {};
 
-  const news = market.news || [];
+  const signal =
+    market.signal || {};
 
-  const trending = market.trending || [];
+  const news =
+    market.news || [];
+
+  const trending =
+    market.trending || [];
 
   const similarEvents =
     market.similarEvents || [];
 
-  const forecast = dashboard?.forecast;
+  const forecast =
+    dashboard?.forecast || {};
+
+  const strategyCell =
+    `${forecast.mid_term_direction}_${forecast.short_term_direction}`;
 
   return (
-    <div className="page">
+    <div className="dashboard-page">
 
-      {/* HERO */}
+      <header className="header">
 
-      <section className="hero">
+        <div>
 
-        <div className="hero-left">
-
-          <div className="hero-badge">
-            AI Coffee Intelligence
+          <div className="header-badge">
+            Coffee Market Intelligence
           </div>
 
           <h1>
-            생두 구매 의사결정
-            <br />
-            플랫폼
+            생두 구매 의사결정 플랫폼
           </h1>
 
           <p>
-            가격 예측 모델과 시장 뉴스를
-            결합하여 생두 구매 타이밍
-            의사결정을 지원합니다.
+            뉴스 · 시장 데이터 · AI 예측을
+            통합한 의사결정 대시보드
           </p>
 
         </div>
 
-        <div className="hero-right">
+      </header>
 
-          <div className="hero-chart">
-
-            <div className="chart-label">
-              가격 추이 및 예측
-            </div>
-
-            <div className="fake-chart">
-              <div className="line actual" />
-              <div className="line predict" />
-            </div>
-
-          </div>
-
-        </div>
-
-      </section>
-
-      {/* SNAPSHOT */}
-
-      <section className="snapshot-grid">
+      <section className="snapshot-row">
 
         <div className="snapshot-card">
-          <span>시장 심리</span>
+          <span>
+            ICE Arabica
+          </span>
 
-          <h3>
-            {signal.market_signal
-              ? signal.market_signal.toUpperCase()
-              : "-"}
-          </h3>
+          <h2>
+            {marketSnapshot.arabica_close}
+          </h2>
 
           <p>
-            평균 감성 :
+            {marketSnapshot.arabica_pct_change}%
+          </p>
+        </div>
+
+        <div className="snapshot-card">
+          <span>
+            USD/KRW
+          </span>
+
+          <h2>
+            {marketSnapshot.usdkrw}
+          </h2>
+
+          <p>
+            {marketSnapshot.usdkrw_pct_change}%
+          </p>
+        </div>
+
+        <div className="snapshot-card">
+          <span>
+            News Signal
+          </span>
+
+          <h2>
+            {signal.market_signal ||
+              "-"}
+          </h2>
+
+          <p>
+            Sentiment :
             {" "}
-            {signal.avg_sentiment ?? "-"}
+            {signal.avg_sentiment ??
+              "-"}
           </p>
         </div>
 
         <div className="snapshot-card">
-          <span>오늘 뉴스</span>
+          <span>
+            AI Forecast
+          </span>
 
-          <h3>
-            {news.length}
-          </h3>
-
-          <p>
-            수집 기사 수
-          </p>
-        </div>
-
-        <div className="snapshot-card">
-          <span>AI 모델</span>
-
-          <h3>
-            {forecast
-              ? "연동 완료"
-              : "연동 대기"}
-          </h3>
+          <h2>
+            {forecast.probability_up}%
+          </h2>
 
           <p>
-            모델 API 연결 상태
-          </p>
-        </div>
-
-        <div className="snapshot-card">
-          <span>트렌드</span>
-
-          <h3>
-            {trending.length}
-          </h3>
-
-          <p>
-            주요 키워드
+            {
+              forecast.short_term_direction
+            }
           </p>
         </div>
 
       </section>
 
-      {/* MAIN */}
+      <section className="forecast-layout">
 
-      <section className="main-layout">
+        <div className="forecast-panel">
 
-        <div className="chart-panel">
-
-          <div className="section-title">
-            가격 분석
+          <div className="panel-header">
+            <h2>
+              Price Outlook
+            </h2>
           </div>
 
-          <div className="big-chart">
+          <div className="chart-card">
 
-            <div className="chart-placeholder">
+            <div className="chart-overlay">
 
-              <div className="line actual" />
+              <div className="overlay-box">
 
-              <div className="line predict" />
+                <span>
+                  상승확률
+                </span>
+
+                <strong>
+                  {
+                    forecast.probability_up
+                  }
+                  %
+                </strong>
+
+              </div>
+
+              <div className="overlay-box">
+
+                <span>
+                  방향
+                </span>
+
+                <strong>
+                  {
+                    forecast.short_term_direction
+                  }
+                </strong>
+
+              </div>
+
+              <div className="overlay-box">
+
+                <span>
+                  기간
+                </span>
+
+                <strong>
+                  {
+                    forecast.mid_term_period
+                  }
+                  일
+                </strong>
+
+              </div>
+
+            </div>
+
+            <div className="fake-chart-large">
+
+              <div className="grid-lines" />
+
+              <div className="actual-line" />
+
+              <div className="forecast-line" />
 
             </div>
 
@@ -205,43 +251,68 @@ export default function App() {
 
         <div className="strategy-panel">
 
-          <div className="section-title">
-            매입 전략
-          </div>
+          <h2>
+            매입 전략 매트릭스
+          </h2>
 
-          <div className="strategy-grid">
+          <div className="matrix-grid">
 
-            <div>
+            <div
+              className={`matrix-cell ${
+                strategyCell ===
+                "UP_UP"
+                  ? "active"
+                  : ""
+              }`}
+            >
               즉시 선매입
             </div>
 
-            <div>
+            <div
+              className={`matrix-cell ${
+                strategyCell ===
+                "UP_DOWN"
+                  ? "active"
+                  : ""
+              }`}
+            >
               분할 매수
             </div>
 
-            <div>
+            <div
+              className={`matrix-cell ${
+                strategyCell ===
+                "DOWN_UP"
+                  ? "active"
+                  : ""
+              }`}
+            >
               헤징 검토
             </div>
 
-            <div>
+            <div
+              className={`matrix-cell ${
+                strategyCell ===
+                "DOWN_DOWN"
+                  ? "active"
+                  : ""
+              }`}
+            >
               매입 보류
             </div>
 
           </div>
+                    <div className="strategy-status">
 
-          <div className="strategy-info">
+            <div className="status-label">
+              현재 모델 시그널
+            </div>
 
-            {forecast ? (
-              <>
-                모델 결과에 따라
-                전략 자동 추천
-              </>
-            ) : (
-              <>
-                모델 API
-                연동 대기중
-              </>
-            )}
+            <div className="status-value">
+              {forecast.mid_term_direction}
+              {" / "}
+              {forecast.short_term_direction}
+            </div>
 
           </div>
 
@@ -249,160 +320,316 @@ export default function App() {
 
       </section>
 
-      {/* MODEL */}
+      <section className="content-layout">
 
-      <section className="panel">
+        <div className="news-panel">
 
-        <div className="section-title">
-          AI 모델 결과
-        </div>
+          <div className="panel-header">
 
-        {!forecast && (
-          <div className="waiting-box">
+            <h2>
+              Market News
+            </h2>
 
-            모델 API 연동 후
-
-            <br />
-
-            단기 상승 확률,
-            중장기 방향,
-            Feature Importance가
-            표시됩니다.
+            <span>
+              {news.length} Articles
+            </span>
 
           </div>
-        )}
 
-      </section>
+          <div className="news-list">
 
-      {/* NEWS */}
+            {news.map((item) => {
 
-      <section className="panel">
+              const sentiment =
+                item.sentiment_score > 0.6
+                  ? "positive"
+                  : item.sentiment_score < 0.4
+                  ? "negative"
+                  : "neutral";
 
-        <div className="section-header">
+              return (
+                <div
+                  key={item.id}
+                  className="news-card"
+                >
 
-          <h2>
-            시장 뉴스
-          </h2>
+                  <div className="news-top">
+
+                    <span className="source">
+                      {item.source}
+                    </span>
+
+                    <span
+                      className={`sentiment ${sentiment}`}
+                    >
+                      {sentiment}
+                    </span>
+
+                  </div>
+
+                  <h3>
+                    {item.title}
+                  </h3>
+
+                  <p>
+                    {item.summary}
+                  </p>
+
+                  <div className="entity-list">
+
+                    {(item.named_entities || [])
+                      .slice(0, 5)
+                      .map((entity, idx) => (
+                        <span
+                          key={idx}
+                          className="entity-tag"
+                        >
+                          {entity}
+                        </span>
+                      ))}
+
+                  </div>
+
+                </div>
+              );
+            })}
+
+          </div>
 
         </div>
 
-        <div className="news-grid">
+        <div className="insight-panel">
 
-          {news.map((item) => (
-            <div
-              className="news-card"
-              key={item.id}
+          <div className="insight-tabs">
+
+            <button
+              className={
+                activeInsight === "feature"
+                  ? "active"
+                  : ""
+              }
+              onClick={() =>
+                setActiveInsight(
+                  "feature"
+                )
+              }
             >
+              Feature
+            </button>
 
-              <div className="news-source">
-                {item.source}
-              </div>
+            <button
+              className={
+                activeInsight === "trending"
+                  ? "active"
+                  : ""
+              }
+              onClick={() =>
+                setActiveInsight(
+                  "trending"
+                )
+              }
+            >
+              Trending
+            </button>
 
-              <h3>
-                {item.title}
-              </h3>
+            <button
+              className={
+                activeInsight === "similar"
+                  ? "active"
+                  : ""
+              }
+              onClick={() =>
+                setActiveInsight(
+                  "similar"
+                )
+              }
+            >
+              Similar
+            </button>
 
-              <p>
-                {item.summary}
-              </p>
+          </div>
+
+          {activeInsight ===
+            "feature" && (
+
+            <div className="feature-panel">
+
+              {(
+                forecast.feature_importance ||
+                []
+              ).map((item) => (
+
+                <div
+                  key={item.feature}
+                  className="feature-item"
+                >
+
+                  <div className="feature-header">
+
+                    <span>
+                      {item.feature}
+                    </span>
+
+                    <strong>
+                      {item.importance}%
+                    </strong>
+
+                  </div>
+
+                  <div className="progress">
+
+                    <div
+                      className="progress-fill"
+                      style={{
+                        width:
+                          item.importance +
+                          "%",
+                      }}
+                    />
+
+                  </div>
+
+                </div>
+
+              ))}
 
             </div>
-          ))}
 
-        </div>
+          )}
 
-      </section>
+          {activeInsight ===
+            "trending" && (
 
-      {/* SIMILAR */}
+            <div className="trending-panel">
 
-      <section className="panel">
+              {trending.map(
+                (item) => (
 
-        <div className="section-title">
-          유사 과거 사례
-        </div>
+                  <div
+                    key={item.entity}
+                    className="trend-row"
+                  >
 
-        <div className="similar-grid">
+                    <span>
+                      {item.entity}
+                    </span>
 
-          {similarEvents.map(
-            (item, index) => (
-              <div
-                key={index}
-                className="similar-card"
-              >
+                    <strong>
+                      {item.count}
+                    </strong>
 
-                <h4>
-                  {
-                    item.today_article
-                      ?.title
-                  }
-                </h4>
+                  </div>
 
-                <p>
-                  {
-                    item.similar_past
-                      ?.title
-                  }
-                </p>
+                )
+              )}
 
-                <strong>
+            </div>
 
-                  +5일 :
+          )}
 
-                  {" "}
+          {activeInsight ===
+            "similar" && (
 
-                  {
-                    item.similar_past
-                      ?.price_changes?.[
-                      "+5d"
-                    ]?.arabica_pct
-                  }
+            <div className="similar-panel">
 
-                  %
+              {similarEvents.map(
+                (item, idx) => (
 
-                </strong>
+                  <div
+                    key={idx}
+                    className="similar-item"
+                  >
 
-              </div>
-            )
+                    <h4>
+                      {
+                        item
+                          .today_article
+                          ?.title
+                      }
+                    </h4>
+
+                    <p>
+                      {
+                        item
+                          .similar_past
+                          ?.title
+                      }
+                    </p>
+
+                    <div className="price-boxes">
+
+                      <div>
+                        +1D
+                        <strong>
+                          {
+                            item
+                              .similar_past
+                              ?.price_changes?.[
+                              "+1d"
+                            ]
+                              ?.arabica_pct
+                          }
+                          %
+                        </strong>
+                      </div>
+
+                      <div>
+                        +3D
+                        <strong>
+                          {
+                            item
+                              .similar_past
+                              ?.price_changes?.[
+                              "+3d"
+                            ]
+                              ?.arabica_pct
+                          }
+                          %
+                        </strong>
+                      </div>
+
+                      <div>
+                        +5D
+                        <strong>
+                          {
+                            item
+                              .similar_past
+                              ?.price_changes?.[
+                              "+5d"
+                            ]
+                              ?.arabica_pct
+                          }
+                          %
+                        </strong>
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                )
+              )}
+
+            </div>
+
           )}
 
         </div>
 
       </section>
+            <section className="search-panel">
 
-      {/* TREND */}
+        <div className="panel-header">
 
-      <section className="panel">
+          <h2>
+            News Search
+          </h2>
 
-        <div className="section-title">
-          트렌딩 키워드
-        </div>
-
-        <div className="tag-container">
-
-          {trending.map((item) => (
-            <div
-              key={item.entity}
-              className="tag"
-            >
-              {item.entity}
-            </div>
-          ))}
-
-        </div>
-
-      </section>
-
-      {/* SEARCH */}
-
-      <section className="panel">
-
-        <div className="section-title">
-          뉴스 검색
         </div>
 
         <form
-          onSubmit={searchNews}
           className="search-form"
+          onSubmit={searchNews}
         >
 
           <input
@@ -412,33 +639,39 @@ export default function App() {
                 e.target.value
               )
             }
-            placeholder="브라질 가뭄"
+            placeholder="브라질 가뭄, 베트남 생산량..."
           />
 
-          <button>
+          <button
+            type="submit"
+          >
             검색
           </button>
 
         </form>
 
-        <div className="search-result">
+        <div className="search-results">
 
-          {searchResult.map((item) => (
-            <div
-              className="search-card"
-              key={item.id}
-            >
+          {searchResult.map(
+            (item) => (
 
-              <h4>
-                {item.title}
-              </h4>
+              <div
+                key={item.id}
+                className="search-card"
+              >
 
-              <p>
-                {item.description}
-              </p>
+                <h4>
+                  {item.title}
+                </h4>
 
-            </div>
-          ))}
+                <p>
+                  {item.description}
+                </p>
+
+              </div>
+
+            )
+          )}
 
         </div>
 
