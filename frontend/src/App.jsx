@@ -274,13 +274,14 @@ export default function App() {
 
       <main className="main">
         <section className="kpi-row">
+          {/* ICE 아라비카, USD/KRW, 단기 모델: market_daily 테이블 API 미연동 — 연동 후 값 표시 예정 */}
           <div className="kpi-card kpi-model">
             <span className="kpi-label">ICE 아라비카</span>
             <div className="kpi-value-row">
               <span className="kpi-value">–</span>
               <span className="kpi-unit">¢/lb</span>
             </div>
-            <span className="kpi-note kpi-model-note">모델 API 연동 예정</span>
+            <span className="kpi-note kpi-model-note">시장 데이터 API 연동 예정</span>
           </div>
 
           <div className="kpi-card kpi-model">
@@ -289,7 +290,7 @@ export default function App() {
               <span className="kpi-value">–</span>
               <span className="kpi-unit">원</span>
             </div>
-            <span className="kpi-note kpi-model-note">모델 API 연동 예정</span>
+            <span className="kpi-note kpi-model-note">시장 데이터 API 연동 예정</span>
           </div>
 
           <div className="kpi-card kpi-model">
@@ -297,7 +298,7 @@ export default function App() {
             <div className="kpi-value-row">
               <span className="kpi-value">–%</span>
             </div>
-            <span className="kpi-note kpi-model-note">상승 확률 · ARIMA+XGB</span>
+            <span className="kpi-note kpi-model-note">상승 확률 · ARIMA+XGB · 모델 API 연동 예정</span>
           </div>
 
           <div className={`kpi-card kpi-live ${sig.cls}`}>
@@ -321,12 +322,12 @@ export default function App() {
 
         <div className="grid-main">
           <div className="col-left">
-            {/* AI 브리핑 placeholder */}
+            {/* AI 브리핑: LLM 브리핑 자동화(창민) 완료 후 연동 예정 */}
             <div className="section-card briefing-card">
               <div className="section-header">
                 <span className="section-title">AI 데일리 브리핑</span>
                 <span className="badge-llm">LLM 생성</span>
-                <span className="section-note">모델 API 연동 예정</span>
+                <span className="section-note">브리핑 API 연동 예정</span>
               </div>
               <div className="briefing-placeholder">
                 <div className="placeholder-line w-full" />
@@ -420,48 +421,7 @@ export default function App() {
           </div>
 
           <div className="col-right">
-            {/* 가격 추이 모델 placeholder */}
-            <div className="section-card chart-card">
-              <div className="section-header">
-                <span className="section-title">가격 추이 + 모델 예측</span>
-                <div className="chart-tabs">
-                  {["1W","1M","3M"].map(t => (
-                    <span key={t} className={`chart-tab ${t === "1M" ? "active" : ""}`}>{t}</span>
-                  ))}
-                </div>
-              </div>
-              <div className="chart-placeholder-inner">
-                <svg viewBox="0 0 340 110" className="placeholder-chart" aria-hidden="true">
-                  <path d="M0,85 C30,80 50,65 80,55 C110,45 120,50 150,40 C180,30 190,45 220,35 C250,25 270,30 300,20 C320,15 330,13 340,10"
-                    fill="none" stroke="#d1cbc4" strokeWidth="1.5" strokeDasharray="5 4" />
-                  <path d="M0,85 C30,80 50,65 80,55 C110,45 120,50 150,40 C180,30 190,45 220,35 C250,25 270,30 300,20 C320,15 330,13 340,10 L340,110 L0,110 Z"
-                    fill="#f5f3f0" />
-                </svg>
-                <div className="chart-overlay-text">모델 API 연동 예정</div>
-              </div>
-              <div className="chart-legend">
-                <span><span className="legend-line real" />실제 가격</span>
-                <span><span className="legend-line pred" />모델 예측</span>
-              </div>
-
-              <div className="matrix-section">
-                <div className="matrix-title">매입 전략 매트릭스</div>
-                <div className="matrix-grid">
-                  <div className="matrix-header" />
-                  <div className="matrix-header center">단기 ↑</div>
-                  <div className="matrix-header center">단기 ↓</div>
-                  <div className="matrix-rowlabel">중장기 ↑</div>
-                  <div className="matrix-cell action-buy">즉시 선매입</div>
-                  <div className="matrix-cell action-split">분할 매수</div>
-                  <div className="matrix-rowlabel">중장기 ↓</div>
-                  <div className="matrix-cell action-hedge">▶ 리스크 헤징</div>
-                  <div className="matrix-cell action-hold">매입 보류</div>
-                </div>
-                <p className="matrix-note">모델 데이터 연동 후 현재 상태 자동 표시</p>
-              </div>
-            </div>
-
-            {/* 감성 트렌드 */}
+            {/* 감성 트렌드 — /api/news/signal 연동 완료 */}
             <div className="section-card signal-card">
               <div className="section-header">
                 <span className="section-title">감성 트렌드</span>
@@ -492,7 +452,7 @@ export default function App() {
               )}
             </div>
 
-            {/* 트렌딩 */}
+            {/* 트렌딩 — /api/news/trending 연동 완료 */}
             <div className="section-card trending-card">
               <div className="section-header">
                 <span className="section-title">트렌딩 키워드</span>
@@ -507,12 +467,10 @@ export default function App() {
               )}
             </div>
 
-            {/* Feature 현황 */}
+            {/* Feature 현황: market_daily + coffee_predictions API 연동 예정 */}
             <div className="section-card feature-card">
-              <div className="tab-bar small">
-                <span className="tab-btn active small">Feature 현황</span>
-                <span className="tab-btn small dim">계절성</span>
-                <span className="tab-btn small dim">과거 리스크</span>
+              <div className="section-header">
+                <span className="section-title">Feature 현황</span>
               </div>
               <table className="feature-table">
                 <tbody>
@@ -539,7 +497,7 @@ export default function App() {
                   ))}
                 </tbody>
               </table>
-              <p className="feature-model-note">* 모델 API 연동 후 실시간 업데이트</p>
+              <p className="feature-model-note">* 시장 데이터 및 모델 API 연동 후 업데이트</p>
             </div>
           </div>
         </div>
