@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import "./App.css";
 
-// 백엔드 Railway URL - 환경변수 없으면 배포 백 URL 직접 사용
 const API_BASE = import.meta.env.VITE_API_BASE || "https://coffee-market-dashboard-production.up.railway.app";
 
 function sentimentLabel(score) {
@@ -192,6 +191,68 @@ function SearchBar({ onSearch }) {
   );
 }
 
+// 매입 전략 매트릭스: 모델 예측 데이터 기반으로 현재 상태 하이라이트
+function PurchaseMatrix({ shortDir, midDir }) {
+  // shortDir: "up" | "down" | null, midDir: "up" | "down" | null
+  const cells = [
+    { row: "mid_up",   col: "short_up",   label: "즉시 선매입",  cls: "action-buy" },
+    { row: "mid_up",   col: "short_down", label: "분할 매수",    cls: "action-split" },
+    { row: "mid_down", col: "short_up",   label: "리스크 헤징",  cls: "action-hedge" },
+    { row: "mid_down", col: "short_down", label: "매입 보류",    cls: "action-hold" },
+  ];
+
+  const activeRow = midDir === "up" ? "mid_up" : midDir === "down" ? "mid_down" : null;
+  const activeCol = shortDir === "up" ? "short_up" : shortDir === "down" ? "short_down" : null;
+
+  return (
+    <div className="matrix-section">
+      <div className="matrix-title">매입 전략 매트릭스</div>
+      <div className="matrix-grid">
+        <div className="matrix-header" />
+        <div className="matrix-header center">단기 ↑</div>
+        <div className="matrix-header center">단기 ↓</div>
+        {cells.slice(0, 2).map((cell) => {
+          const isActive = activeRow === cell.row && activeCol === cell.col;
+          return (
+            <>
+              {cell.col === "short_up" && (
+                <div key={`label-${cell.row}`} className="matrix-rowlabel">
+                  {cell.row === "mid_up" ? "중장기 ↑" : "중장기 ↓"}
+                </div>
+              )}
+              <div key={`${cell.row}-${cell.col}`}
+                className={`matrix-cell ${cell.cls}${isActive ? " matrix-active" : ""}`}>
+                {isActive && <span className="matrix-active-dot">▶ </span>}
+                {cell.label}
+              </div>
+            </>
+          );
+        })}
+        {cells.slice(2, 4).map((cell) => {
+          const isActive = activeRow === cell.row && activeCol === cell.col;
+          return (
+            <>
+              {cell.col === "short_up" && (
+                <div key={`label-${cell.row}`} className="matrix-rowlabel">
+                  {cell.row === "mid_up" ? "중장기 ↑" : "중장기 ↓"}
+                </div>
+              )}
+              <div key={`${cell.row}-${cell.col}`}
+                className={`matrix-cell ${cell.cls}${isActive ? " matrix-active" : ""}`}>
+                {isActive && <span className="matrix-active-dot">▶ </span>}
+                {cell.label}
+              </div>
+            </>
+          );
+        })}
+      </div>
+      {(!shortDir || !midDir) && (
+        <p className="matrix-note">모델 API 연동 후 현재 상태 자동 표시</p>
+      )}
+    </div>
+  );
+}
+
 export default function App() {
   const [todayNews, setTodayNews] = useState([]);
   const [signal, setSignal] = useState(null);
@@ -205,6 +266,11 @@ export default function App() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [now, setNow] = useState(new Date());
 
+  // 모델 예측 데이터 (API 연동 예정)
+  const modelShortDir = null;   // "up" | "down" | null — API 연동 후 채워짐
+  const modelMidDir = null;     // "up" | "down" | null — API 연동 후 채워짐
+  const modelShortProb = null;  // 단기 상승 확률
+
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(t);
@@ -213,7 +279,6 @@ export default function App() {
   const fetchJSON = useCallback(async (path, onData, key) => {
     try {
       const url = `${API_BASE}${path}`;
-      console.log('[fetch]', url);
       const res = await fetch(url);
       if (!res.ok) {
         const txt = await res.text();
@@ -222,7 +287,6 @@ export default function App() {
       const data = await res.json();
       onData(data);
     } catch (e) {
-      console.error('[fetch error]', key, e.message);
       setError((prev) => ({ ...prev, [key]: e.message }));
     } finally {
       setLoading((prev) => ({ ...prev, [key]: false }));
@@ -326,7 +390,7 @@ export default function App() {
               <div className="section-header">
                 <span className="section-title">AI 데일리 브리핑</span>
                 <span className="badge-llm">LLM 생성</span>
-                <span className="section-note">모델 API 연동 예정</span>
+                <span className="section-note">브리핑 API 연동 예정</span>
               </div>
               <div className="briefing-placeholder">
                 <div className="placeholder-line w-full" />
@@ -355,110 +419,90 @@ export default function App() {
 
             <SearchBar onSearch={handleSearch} />
 
-            <div className="tab-bar">
-              <button className={`tab-btn ${activeTab === "news" ? "active" : ""}`} onClick={() => setActiveTab("news")}>
-                뉴스 피드
-                {todayCount > 0 && <span className="tab-count">{todayCount}</span>}
-              </button>
-              <button className={`tab-btn ${activeTab === "similar" ? "active" : ""}`} onClick={() => setActiveTab("similar")}>
-                유사 과거 사건
-              </button>
-              {searchResults && (
-                <button className={`tab-btn ${activeTab === "search" ? "active" : ""}`} onClick={() => setActiveTab("search")}>
-                  검색: {searchResults.q}
+            {/* 뉴스 피드 / 유사 과거 사건 탭 — 스크롤 박스 */}
+            <div className="section-card news-section-card">
+              <div className="tab-bar">
+                <button className={`tab-btn ${activeTab === "news" ? "active" : ""}`} onClick={() => setActiveTab("news")}>
+                  뉴스 피드
+                  {todayCount > 0 && <span className="tab-count">{todayCount}</span>}
                 </button>
-              )}
+                <button className={`tab-btn ${activeTab === "similar" ? "active" : ""}`} onClick={() => setActiveTab("similar")}>
+                  유사 과거 사건
+                </button>
+                {searchResults && (
+                  <button className={`tab-btn ${activeTab === "search" ? "active" : ""}`} onClick={() => setActiveTab("search")}>
+                    검색: {searchResults.q}
+                  </button>
+                )}
+              </div>
+
+              <div className="news-scroll-area">
+                {activeTab === "news" && (
+                  <div className="news-list">
+                    {loading.news ? (
+                      <div className="loading-state"><div className="spinner" /><span>뉴스 로딩 중...</span></div>
+                    ) : error.news ? (
+                      <div className="error-state">
+                        <strong>뉴스를 불러오지 못했습니다</strong>
+                        <p>{error.news}</p>
+                      </div>
+                    ) : todayNews.length === 0 ? (
+                      <div className="empty-state">오늘 수집된 뉴스가 없습니다.</div>
+                    ) : (
+                      todayNews.map((item) => <NewsCard key={item.id} item={item} onClick={setSelectedNews} />)
+                    )}
+                  </div>
+                )}
+
+                {activeTab === "similar" && (
+                  <div className="similar-list">
+                    {loading.similar ? (
+                      <div className="loading-state"><div className="spinner" /><span>유사 사건 분석 중...</span></div>
+                    ) : error.similar ? (
+                      <div className="error-state">
+                        <strong>데이터를 불러오지 못했습니다</strong>
+                        <p>{error.similar}</p>
+                      </div>
+                    ) : similar.length === 0 ? (
+                      <div className="empty-state">유사 과거 사건 데이터가 없습니다.</div>
+                    ) : (
+                      similar.map((item, i) => <SimilarCard key={i} data={item} />)
+                    )}
+                  </div>
+                )}
+
+                {activeTab === "search" && (
+                  <div className="news-list">
+                    {searchLoading ? (
+                      <div className="loading-state"><div className="spinner" /><span>검색 중...</span></div>
+                    ) : searchResults?.error ? (
+                      <div className="error-state">{searchResults.error}</div>
+                    ) : searchResults?.items?.length === 0 ? (
+                      <div className="empty-state">검색 결과가 없습니다.</div>
+                    ) : (
+                      searchResults?.items?.map((item) => <NewsCard key={item.id} item={item} onClick={setSelectedNews} />)
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-
-            {activeTab === "news" && (
-              <div className="news-list">
-                {loading.news ? (
-                  <div className="loading-state"><div className="spinner" /><span>뉴스 로딩 중...</span></div>
-                ) : error.news ? (
-                  <div className="error-state">
-                    <strong>뉴스를 불러오지 못했습니다</strong>
-                    <p>{error.news}</p>
-                  </div>
-                ) : todayNews.length === 0 ? (
-                  <div className="empty-state">오늘 수집된 뉴스가 없습니다.</div>
-                ) : (
-                  todayNews.map((item) => <NewsCard key={item.id} item={item} onClick={setSelectedNews} />)
-                )}
-              </div>
-            )}
-
-            {activeTab === "similar" && (
-              <div className="similar-list">
-                {loading.similar ? (
-                  <div className="loading-state"><div className="spinner" /><span>유사 사건 분석 중...</span></div>
-                ) : error.similar ? (
-                  <div className="error-state">
-                    <strong>데이터를 불러오지 못했습니다</strong>
-                    <p>{error.similar}</p>
-                  </div>
-                ) : similar.length === 0 ? (
-                  <div className="empty-state">유사 과거 사건 데이터가 없습니다.</div>
-                ) : (
-                  similar.map((item, i) => <SimilarCard key={i} data={item} />)
-                )}
-              </div>
-            )}
-
-            {activeTab === "search" && (
-              <div className="news-list">
-                {searchLoading ? (
-                  <div className="loading-state"><div className="spinner" /><span>검색 중...</span></div>
-                ) : searchResults?.error ? (
-                  <div className="error-state">{searchResults.error}</div>
-                ) : searchResults?.items?.length === 0 ? (
-                  <div className="empty-state">검색 결과가 없습니다.</div>
-                ) : (
-                  searchResults?.items?.map((item) => <NewsCard key={item.id} item={item} onClick={setSelectedNews} />)
-                )}
-              </div>
-            )}
           </div>
 
           <div className="col-right">
-            {/* 가격 추이 모델 placeholder */}
+            {/* 가격 추이 + 모델 예측 — 단기/중장기 탭으로 변경 */}
             <div className="section-card chart-card">
               <div className="section-header">
                 <span className="section-title">가격 추이 + 모델 예측</span>
                 <div className="chart-tabs">
-                  {["1W","1M","3M"].map(t => (
-                    <span key={t} className={`chart-tab ${t === "1M" ? "active" : ""}`}>{t}</span>
-                  ))}
+                  <span className="chart-tab active">단기</span>
+                  <span className="chart-tab">중장기</span>
                 </div>
               </div>
               <div className="chart-placeholder-inner">
-                <svg viewBox="0 0 340 110" className="placeholder-chart" aria-hidden="true">
-                  <path d="M0,85 C30,80 50,65 80,55 C110,45 120,50 150,40 C180,30 190,45 220,35 C250,25 270,30 300,20 C320,15 330,13 340,10"
-                    fill="none" stroke="#d1cbc4" strokeWidth="1.5" strokeDasharray="5 4" />
-                  <path d="M0,85 C30,80 50,65 80,55 C110,45 120,50 150,40 C180,30 190,45 220,35 C250,25 270,30 300,20 C320,15 330,13 340,10 L340,110 L0,110 Z"
-                    fill="#f5f3f0" />
-                </svg>
                 <div className="chart-overlay-text">모델 API 연동 예정</div>
               </div>
-              <div className="chart-legend">
-                <span><span className="legend-line real" />실제 가격</span>
-                <span><span className="legend-line pred" />모델 예측</span>
-              </div>
 
-              <div className="matrix-section">
-                <div className="matrix-title">매입 전략 매트릭스</div>
-                <div className="matrix-grid">
-                  <div className="matrix-header" />
-                  <div className="matrix-header center">단기 ↑</div>
-                  <div className="matrix-header center">단기 ↓</div>
-                  <div className="matrix-rowlabel">중장기 ↑</div>
-                  <div className="matrix-cell action-buy">즉시 선매입</div>
-                  <div className="matrix-cell action-split">분할 매수</div>
-                  <div className="matrix-rowlabel">중장기 ↓</div>
-                  <div className="matrix-cell action-hedge">▶ 리스크 헤징</div>
-                  <div className="matrix-cell action-hold">매입 보류</div>
-                </div>
-                <p className="matrix-note">모델 데이터 연동 후 현재 상태 자동 표시</p>
-              </div>
+              <PurchaseMatrix shortDir={modelShortDir} midDir={modelMidDir} />
             </div>
 
             {/* 감성 트렌드 */}
@@ -507,12 +551,10 @@ export default function App() {
               )}
             </div>
 
-            {/* Feature 현황 */}
+            {/* Feature 현황 — 계절성/과거 리스크 탭 제거 */}
             <div className="section-card feature-card">
-              <div className="tab-bar small">
-                <span className="tab-btn active small">Feature 현황</span>
-                <span className="tab-btn small dim">계절성</span>
-                <span className="tab-btn small dim">과거 리스크</span>
+              <div className="feature-card-header">
+                <span className="section-title">Feature 현황</span>
               </div>
               <table className="feature-table">
                 <tbody>
@@ -528,7 +570,7 @@ export default function App() {
                       cls: sig.cls,
                     },
                     { label: "ARIMA 잔차", val: "–", note: "", cls: "" },
-                    { label: "XGBoost 상승 확률", val: "–%", note: "", cls: "" },
+                    { label: "XGBoost 상승 확률", val: modelShortProb ? `${(modelShortProb * 100).toFixed(1)}%` : "–%", note: "", cls: "" },
                     { label: "30일 가격 백분위", val: "–", note: "", cls: "" },
                   ].map((r) => (
                     <tr key={r.label}>

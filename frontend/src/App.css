@@ -1,6 +1,7 @@
 /* ===== BEAN PULSE — App.css (White Theme) ===== */
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Libre+Baskerville:wght@700&family=Noto+Sans+KR:wght@300;400;500;600&display=swap');
+/* Noto Sans KR: 한글+영문 모두 커버, 디자인에 어울리는 단일 폰트 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Noto+Sans+Mono:wght@400;500&display=swap');
 
 :root {
   --bg:       #f9f8f6;
@@ -30,8 +31,8 @@
   --radius-lg: 14px;
 
   --font-body:    'Noto Sans KR', sans-serif;
-  --font-mono:    'DM Mono', monospace;
-  --font-display: 'Libre Baskerville', serif;
+  --font-mono:    'Noto Sans Mono', 'Noto Sans KR', monospace;
+  --font-display: 'Noto Sans KR', sans-serif;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -75,8 +76,9 @@ body {
 .logo-text {
   font-family: var(--font-display);
   font-size: 19px;
+  font-weight: 700;
   color: var(--accent);
-  letter-spacing: 0.03em;
+  letter-spacing: 0.08em;
 }
 
 .logo-sub {
@@ -110,6 +112,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 5px;
+  align-items: flex-start;
 }
 
 .kpi-card.kpi-model { opacity: 0.65; }
@@ -123,6 +126,7 @@ body {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  text-align: left;
 }
 
 .kpi-value-row { display: flex; align-items: baseline; gap: 4px; }
@@ -132,6 +136,7 @@ body {
   font-size: 26px;
   font-weight: 500;
   color: var(--text-primary);
+  text-align: left;
 }
 
 .kpi-value.sentiment-big {
@@ -141,7 +146,7 @@ body {
 }
 
 .kpi-unit { font-size: 13px; color: var(--text-secondary); }
-.kpi-note { font-size: 11px; color: var(--text-muted); }
+.kpi-note { font-size: 11px; color: var(--text-muted); text-align: left; }
 .kpi-model-note { font-style: italic; }
 .kpi-loading, .kpi-error { font-size: 13px; color: var(--text-muted); }
 
@@ -280,6 +285,29 @@ body {
 }
 .search-btn:hover { background: var(--accent-light); }
 
+/* ---- NEWS SECTION CARD (뉴스+유사 스크롤 박스) ---- */
+.news-section-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.news-section-card .tab-bar {
+  padding: 0 20px;
+  margin-bottom: 0;
+}
+
+/* 스크롤 영역: Feature 현황 카드 높이에 맞춤 */
+.news-scroll-area {
+  max-height: 520px;
+  overflow-y: auto;
+  padding: 12px 20px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg4) transparent;
+}
+.news-scroll-area::-webkit-scrollbar { width: 5px; }
+.news-scroll-area::-webkit-scrollbar-track { background: transparent; }
+.news-scroll-area::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 4px; }
+
 /* ---- TABS ---- */
 .tab-bar {
   display: flex;
@@ -417,16 +445,15 @@ body {
 .chart-placeholder-inner {
   background: var(--bg3);
   border-radius: var(--radius-md);
-  height: 150px;
+  height: 130px;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   overflow: hidden;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   border: 1px solid var(--border);
 }
-.placeholder-chart { width: 100%; height: 100%; position: absolute; inset: 0; }
 .chart-overlay-text {
   font-size: 12px;
   color: var(--text-muted);
@@ -437,26 +464,14 @@ body {
   padding: 3px 10px;
   border-radius: 4px;
 }
-.chart-legend {
-  display: flex; gap: 14px; margin-bottom: 12px;
-  font-size: 12px; color: var(--text-secondary);
-}
-.legend-line {
-  display: inline-block;
-  width: 18px; height: 2px;
-  border-radius: 1px;
-  vertical-align: middle;
-  margin-right: 4px;
-}
-.legend-line.real { background: var(--text-secondary); }
-.legend-line.pred { background: var(--text-muted); border-top: 2px dashed var(--text-muted); height: 0; }
 
 .chart-tabs { display: flex; gap: 3px; margin-left: auto; }
 .chart-tab {
   font-size: 11px; font-family: var(--font-mono);
-  padding: 3px 7px; border-radius: 4px;
+  padding: 3px 9px; border-radius: 4px;
   color: var(--text-muted); cursor: pointer;
   border: 1px solid transparent;
+  transition: background 0.15s, color 0.15s;
 }
 .chart-tab.active {
   background: var(--accent-dim);
@@ -465,7 +480,7 @@ body {
 }
 
 /* ---- MATRIX ---- */
-.matrix-section { margin-top: 12px; }
+.matrix-section { margin-top: 4px; }
 .matrix-title { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; font-weight: 500; }
 .matrix-grid {
   display: grid;
@@ -483,7 +498,12 @@ body {
   font-size: 12px;
   font-weight: 500;
   border: 1px solid transparent;
+  transition: box-shadow 0.15s;
 }
+.matrix-cell.matrix-active {
+  box-shadow: 0 0 0 2px currentColor;
+}
+.matrix-active-dot { font-size: 10px; }
 .action-buy  { background: var(--bullish-bg); color: var(--bullish); border-color: rgba(29,122,78,0.2); }
 .action-split { background: var(--bg3); color: var(--text-secondary); border-color: var(--border); }
 .action-hedge { background: rgba(74,55,40,0.07); color: var(--accent-light); border-color: rgba(74,55,40,0.15); }
@@ -494,7 +514,7 @@ body {
 .trend-chart { margin-bottom: 12px; }
 .trend-bars {
   display: flex; gap: 3px; align-items: flex-end;
-  height: 80px; overflow-x: auto; overflow-y: hidden; padding-bottom: 24px;
+  height: 80px; overflow-x: auto; overflow-y: hidden; padding-bottom: 28px;
 }
 .trend-bar-col {
   display: flex; flex-direction: column; align-items: center;
@@ -507,10 +527,20 @@ body {
 .trend-bar-fill.bullish { background: var(--bullish); }
 .trend-bar-fill.bearish { background: var(--bearish); }
 .trend-bar-fill.neutral { background: var(--neutral); }
+
+/* 날짜 레이블: 가로쓰기 */
 .trend-bar-label {
-  font-size: 9px; font-family: var(--font-mono); color: var(--text-muted);
-  writing-mode: vertical-lr; transform: rotate(180deg); height: 24px; white-space: nowrap;
+  font-size: 8px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  white-space: nowrap;
+  writing-mode: horizontal-tb;
+  transform: none;
+  height: auto;
+  line-height: 1;
+  text-align: center;
 }
+
 .signal-stats { display: flex; gap: 16px; flex-wrap: wrap; }
 .stat-item { display: flex; flex-direction: column; gap: 2px; }
 .stat-label { font-size: 11px; color: var(--text-muted); }
@@ -541,11 +571,18 @@ body {
 .sentiment-fill.neutral { background: var(--neutral); }
 .sentiment-val { font-family: var(--font-mono); font-size: 11px; }
 
-/* ---- FEATURE TABLE ---- */
-.feature-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+/* ---- FEATURE CARD ---- */
+.feature-card-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 4px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.feature-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 6px; }
 .feature-table tr { border-bottom: 1px solid var(--border); }
 .feature-table tr:last-child { border-bottom: none; }
-.ft-label { padding: 7px 0; color: var(--text-secondary); }
+.ft-label { padding: 7px 0; color: var(--text-secondary); text-align: left; }
 .ft-val { padding: 7px 0; font-family: var(--font-mono); font-weight: 500; text-align: right; color: var(--text-primary); }
 .ft-note { padding: 7px 0 7px 8px; font-family: var(--font-mono); font-size: 11px; text-align: right; width: 76px; }
 .feature-model-note { font-size: 11px; color: var(--text-muted); margin-top: 10px; font-style: italic; }
@@ -634,4 +671,5 @@ body {
   .main { padding: 14px 12px 32px; }
   .kpi-row { grid-template-columns: 1fr 1fr; gap: 8px; }
   .logo-sub { display: none; }
+  .news-scroll-area { max-height: 380px; }
 }
