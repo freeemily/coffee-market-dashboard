@@ -306,7 +306,7 @@ body {
 .tab-btn:hover { color: var(--text-secondary); }
 .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
 .tab-btn.small { font-size: 12px; padding: 6px 10px; }
-
+.tab-btn.dim { pointer-events: none; opacity: 0.5; }
 
 .tab-count {
   background: var(--accent-dim);
@@ -413,7 +413,82 @@ body {
 .pc-val { font-size: 13px; font-family: var(--font-mono); font-weight: 600; }
 .pc-price { font-size: 10px; font-family: var(--font-mono); color: var(--text-muted); }
 
+/* ---- CHART PLACEHOLDER ---- */
+.chart-placeholder-inner {
+  background: var(--bg3);
+  border-radius: var(--radius-md);
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+}
+.placeholder-chart { width: 100%; height: 100%; position: absolute; inset: 0; }
+.chart-overlay-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+  position: relative;
+  z-index: 1;
+  background: rgba(249,248,246,0.85);
+  padding: 3px 10px;
+  border-radius: 4px;
+}
+.chart-legend {
+  display: flex; gap: 14px; margin-bottom: 12px;
+  font-size: 12px; color: var(--text-secondary);
+}
+.legend-line {
+  display: inline-block;
+  width: 18px; height: 2px;
+  border-radius: 1px;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+.legend-line.real { background: var(--text-secondary); }
+.legend-line.pred { background: var(--text-muted); border-top: 2px dashed var(--text-muted); height: 0; }
 
+.chart-tabs { display: flex; gap: 3px; margin-left: auto; }
+.chart-tab {
+  font-size: 11px; font-family: var(--font-mono);
+  padding: 3px 7px; border-radius: 4px;
+  color: var(--text-muted); cursor: pointer;
+  border: 1px solid transparent;
+}
+.chart-tab.active {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-color: rgba(74,55,40,0.15);
+}
+
+/* ---- MATRIX ---- */
+.matrix-section { margin-top: 12px; }
+.matrix-title { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; font-weight: 500; }
+.matrix-grid {
+  display: grid;
+  grid-template-columns: 72px 1fr 1fr;
+  gap: 3px;
+  margin-bottom: 8px;
+}
+.matrix-header { font-size: 11px; color: var(--text-muted); text-align: center; padding: 4px; font-family: var(--font-mono); }
+.matrix-header.center { text-align: center; }
+.matrix-rowlabel { font-size: 11px; color: var(--text-muted); padding: 4px; font-family: var(--font-mono); display: flex; align-items: center; }
+.matrix-cell {
+  border-radius: var(--radius-sm);
+  padding: 9px 6px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+.action-buy  { background: var(--bullish-bg); color: var(--bullish); border-color: rgba(29,122,78,0.2); }
+.action-split { background: var(--bg3); color: var(--text-secondary); border-color: var(--border); }
+.action-hedge { background: rgba(74,55,40,0.07); color: var(--accent-light); border-color: rgba(74,55,40,0.15); }
+.action-hold  { background: var(--bearish-bg); color: var(--bearish); border-color: rgba(192,57,43,0.15); }
+.matrix-note { font-size: 11px; color: var(--text-muted); font-style: italic; }
 
 /* ---- TREND CHART ---- */
 .trend-chart { margin-bottom: 12px; }
