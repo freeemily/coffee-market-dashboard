@@ -41,68 +41,63 @@ export default function App() {
     return <div className="loading">Loading...</div>;
   }
 
-  const signal = dashboard?.marketSignal;
-  const news = (dashboard?.latestNews || []).slice(0, 6);
-  const sentimentTrend = dashboard?.sentimentTrend || [];
+  const market = dashboard?.market || {};
+  const signal = market?.signal || {};
+  const news = market?.news || [];
+  const trending = market?.trending || [];
+  const similarEvents = market?.similarEvents || [];
+  const forecast = dashboard?.forecast;
 
   return (
     <div className="app">
 
-      {/* TOP HEADER */}
+      {/* TOP BAR */}
       <header className="topbar">
-        <div className="brand">BeanPulse</div>
-        <div className="subtitle">
-          Coffee Market Intelligence Dashboard
-        </div>
+        <div className="logo">BEAN PULSE</div>
+        <div className="sub">생두 시장 인텔리전스</div>
       </header>
 
-      {/* MARKET SNAPSHOT */}
-      <section className="snapshot">
-        <div className="card">
-          <div className="label">시장 상태</div>
-          <div className="value">{signal || "neutral"}</div>
+      {/* KPI */}
+      <section className="kpiGrid">
+
+        <div className="kpiCard">
+          <div className="kpiLabel">시장 상태</div>
+          <div className="kpiValue">{signal.market_signal || "-"}</div>
         </div>
 
-        <div className="card">
-          <div className="label">뉴스 감성</div>
-          <div className="value">
-            {sentimentTrend.length
-              ? "LIVE"
-              : "NO DATA"}
+        <div className="kpiCard">
+          <div className="kpiLabel">평균 감성</div>
+          <div className="kpiValue">{signal.avg_sentiment ?? "-"}</div>
+        </div>
+
+        <div className="kpiCard">
+          <div className="kpiLabel">뉴스</div>
+          <div className="kpiValue">{news.length}</div>
+        </div>
+
+        <div className="kpiCard">
+          <div className="kpiLabel">모델 상태</div>
+          <div className="kpiValue">
+            {forecast ? "READY" : "WAIT"}
           </div>
         </div>
 
-        <div className="card">
-          <div className="label">모델 상태</div>
-          <div className="value">PENDING</div>
-        </div>
       </section>
 
-      {/* MAIN GRID */}
-      <section className="grid">
+      {/* MAIN */}
+      <section className="mainGrid">
 
-        {/* LEFT */}
-        <div className="left">
+        {/* LEFT - BRIEF */}
+        <div className="panel dark">
 
-          <div className="panel">
-            <h3>가격 차트</h3>
-            <div className="chart-box">
-              <div className="chart-line" />
-              <div className="chart-line forecast" />
-            </div>
-            <div className="hint">
-              모델 연결 시 실제 예측 라인이 표시됩니다
-            </div>
-          </div>
+          <div className="panelTitle">AI 브리핑</div>
 
-          <div className="panel">
-            <h3>시장 뉴스</h3>
-            <div className="news-list">
-              {news.map((n) => (
-                <div key={n.id} className="news-item">
-                  <div className="news-source">{n.source}</div>
-                  <div className="news-title">{n.title}</div>
-                  <div className="news-date">{n.date}</div>
+          <div className="briefBox">
+            <div className="scroll">
+              {news.slice(0, 6).map((n) => (
+                <div key={n.id} className="briefItem">
+                  <div className="briefTitle">{n.title}</div>
+                  <div className="briefMeta">{n.source}</div>
                 </div>
               ))}
             </div>
@@ -110,39 +105,66 @@ export default function App() {
 
         </div>
 
-        {/* RIGHT */}
-        <div className="right">
+        {/* RIGHT - CHART + STRATEGY */}
+        <div className="panel">
 
-          <div className="panel">
-            <h3>매입 전략</h3>
-            <div className="strategy">
-              <div>즉시 매수</div>
-              <div>분할 매수</div>
-              <div>대기</div>
-              <div>헤지</div>
-            </div>
+          <div className="panelTitle">가격 흐름 + 모델</div>
 
-            <div className="hint">
-              모델 API 연결 후 자동 추천됩니다
-            </div>
+          <div className="chartBox">
+            <div className="fakeLineA"></div>
+            <div className="fakeLineB"></div>
           </div>
 
-          <div className="panel">
-            <h3>AI 모델</h3>
-            <div className="placeholder">
-              short_term_prob / mid_term_direction<br />
-              (API 연결 전)
+          <div className="strategyBox">
+
+            <div className="strategy">
+              <span>단기↑ / 장기↑</span>
+              <b>선매입</b>
             </div>
+
+            <div className="strategy">
+              <span>단기↓ / 장기↑</span>
+              <b>분할매수</b>
+            </div>
+
+            <div className="strategy">
+              <span>단기↓ / 장기↓</span>
+              <b>대기</b>
+            </div>
+
           </div>
 
         </div>
+
+      </section>
+
+      {/* NEWS */}
+      <section className="panel">
+
+        <div className="panelTitleRow">
+          <div className="panelTitle">뉴스 피드</div>
+        </div>
+
+        <div className="newsGrid">
+
+          {news.map((n) => (
+            <div key={n.id} className="newsCard">
+              <div className="newsSource">{n.source}</div>
+              <div className="newsTitle">{n.title}</div>
+              <div className="newsDesc">{n.summary}</div>
+            </div>
+          ))}
+
+        </div>
+
       </section>
 
       {/* SEARCH */}
-      <section className="panel full">
-        <h3>뉴스 검색</h3>
+      <section className="panel">
 
-        <form onSubmit={searchNews} className="search">
+        <div className="panelTitle">뉴스 검색</div>
+
+        <form className="search" onSubmit={searchNews}>
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -151,14 +173,14 @@ export default function App() {
           <button>검색</button>
         </form>
 
-        <div className="search-result">
+        <div className="searchResult">
           {searchResult.map((r) => (
-            <div key={r.id} className="search-item">
-              <div>{r.title}</div>
-              <span>{r.source}</span>
+            <div key={r.id} className="searchItem">
+              {r.title}
             </div>
           ))}
         </div>
+
       </section>
 
     </div>
