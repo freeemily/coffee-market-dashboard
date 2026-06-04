@@ -1,5 +1,3 @@
-// App.jsx
-
 import { useEffect, useState } from "react";
 import "./App.css";
 
@@ -18,12 +16,8 @@ export default function App() {
 
   const loadDashboard = async () => {
     try {
-      const res = await fetch(
-        `${WEB_BACKEND_URL}/api/dashboard`
-      );
-
+      const res = await fetch(`${WEB_BACKEND_URL}/api/dashboard`);
       const data = await res.json();
-
       setDashboard(data);
     } catch (err) {
       console.error(err);
@@ -34,18 +28,13 @@ export default function App() {
 
   const searchNews = async (e) => {
     e.preventDefault();
-
     if (!searchQuery.trim()) return;
 
     try {
       const res = await fetch(
-        `${WEB_BACKEND_URL}/api/search?q=${encodeURIComponent(
-          searchQuery
-        )}`
+        `${WEB_BACKEND_URL}/api/search?q=${encodeURIComponent(searchQuery)}`
       );
-
       const data = await res.json();
-
       setSearchResult(data.results || []);
     } catch (err) {
       console.error(err);
@@ -53,396 +42,157 @@ export default function App() {
   };
 
   if (loading) {
-    return (
-      <div className="loading">
-        데이터를 불러오는 중...
-      </div>
-    );
+    return <div className="loading">Loading...</div>;
   }
 
   const market = dashboard?.market || {};
-
   const signal = market.signal || {};
-
   const news = market.news || [];
-
   const trending = market.trending || [];
-
-  const similarEvents =
-    market.similarEvents || [];
-
   const forecast = dashboard?.forecast;
 
   return (
-    <div className="page">
+    <div className="dashboard">
 
-      {/* HERO */}
+      {/* TOP BAR */}
+      <div className="topbar">
+        <div className="brand">BEAN PULSE</div>
+        <div className="timestamp">2026.05.29 (Thu)</div>
+      </div>
 
-      <section className="hero">
+      {/* KPI ROW */}
+      <div className="kpi-grid">
 
-        <div className="hero-left">
+        <div className="kpi-card">
+          <div className="kpi-title">ICE Arabica</div>
+          <div className="kpi-value">274.45</div>
+          <div className="kpi-sub up">+0.44%</div>
+        </div>
 
-          <div className="hero-badge">
-            AI Coffee Intelligence
+        <div className="kpi-card">
+          <div className="kpi-title">USD/KRW</div>
+          <div className="kpi-value">1,378.50</div>
+          <div className="kpi-sub down">-0.12%</div>
+        </div>
+
+        <div className="kpi-card">
+          <div className="kpi-title">Model Accuracy</div>
+          <div className="kpi-value">58%</div>
+          <div className="kpi-sub">ARIMA + XGB</div>
+        </div>
+
+        <div className="kpi-card">
+          <div className="kpi-title">News Sentiment</div>
+          <div className="kpi-value">
+            {signal.market_signal || "Neutral"}
           </div>
-
-          <h1>
-            생두 구매 의사결정
-            <br />
-            플랫폼
-          </h1>
-
-          <p>
-            가격 예측 모델과 시장 뉴스를
-            결합하여 생두 구매 타이밍
-            의사결정을 지원합니다.
-          </p>
-
+          <div className="kpi-sub warn">Weak Bias</div>
         </div>
 
-        <div className="hero-right">
+      </div>
 
-          <div className="hero-chart">
+      {/* MAIN GRID */}
+      <div className="main-grid">
 
-            <div className="chart-label">
-              가격 추이 및 예측
-            </div>
+        {/* LEFT COLUMN */}
+        <div className="left-col">
 
-            <div className="fake-chart">
-              <div className="line actual" />
-              <div className="line predict" />
-            </div>
+          {/* AI BRIEF */}
+          <div className="card">
+            <div className="card-title">AI Daily Briefing</div>
 
-          </div>
-
-        </div>
-
-      </section>
-
-      {/* SNAPSHOT */}
-
-      <section className="snapshot-grid">
-
-        <div className="snapshot-card">
-          <span>시장 심리</span>
-
-          <h3>
-            {signal.market_signal
-              ? signal.market_signal.toUpperCase()
-              : "-"}
-          </h3>
-
-          <p>
-            평균 감성 :
-            {" "}
-            {signal.avg_sentiment ?? "-"}
-          </p>
-        </div>
-
-        <div className="snapshot-card">
-          <span>오늘 뉴스</span>
-
-          <h3>
-            {news.length}
-          </h3>
-
-          <p>
-            수집 기사 수
-          </p>
-        </div>
-
-        <div className="snapshot-card">
-          <span>AI 모델</span>
-
-          <h3>
-            {forecast
-              ? "연동 완료"
-              : "연동 대기"}
-          </h3>
-
-          <p>
-            모델 API 연결 상태
-          </p>
-        </div>
-
-        <div className="snapshot-card">
-          <span>트렌드</span>
-
-          <h3>
-            {trending.length}
-          </h3>
-
-          <p>
-            주요 키워드
-          </p>
-        </div>
-
-      </section>
-
-      {/* MAIN */}
-
-      <section className="main-layout">
-
-        <div className="chart-panel">
-
-          <div className="section-title">
-            가격 분석
-          </div>
-
-          <div className="big-chart">
-
-            <div className="chart-placeholder">
-
-              <div className="line actual" />
-
-              <div className="line predict" />
-
-            </div>
-
-          </div>
-
-        </div>
-
-        <div className="strategy-panel">
-
-          <div className="section-title">
-            매입 전략
-          </div>
-
-          <div className="strategy-grid">
-
-            <div>
-              즉시 선매입
-            </div>
-
-            <div>
-              분할 매수
-            </div>
-
-            <div>
-              헤징 검토
-            </div>
-
-            <div>
-              매입 보류
-            </div>
-
-          </div>
-
-          <div className="strategy-info">
-
-            {forecast ? (
-              <>
-                모델 결과에 따라
-                전략 자동 추천
-              </>
-            ) : (
-              <>
-                모델 API
-                연동 대기중
-              </>
-            )}
-
-          </div>
-
-        </div>
-
-      </section>
-
-      {/* MODEL */}
-
-      <section className="panel">
-
-        <div className="section-title">
-          AI 모델 결과
-        </div>
-
-        {!forecast && (
-          <div className="waiting-box">
-
-            모델 API 연동 후
-
-            <br />
-
-            단기 상승 확률,
-            중장기 방향,
-            Feature Importance가
-            표시됩니다.
-
-          </div>
-        )}
-
-      </section>
-
-      {/* NEWS */}
-
-      <section className="panel">
-
-        <div className="section-header">
-
-          <h2>
-            시장 뉴스
-          </h2>
-
-        </div>
-
-        <div className="news-grid">
-
-          {news.map((item) => (
-            <div
-              className="news-card"
-              key={item.id}
-            >
-
-              <div className="news-source">
-                {item.source}
-              </div>
-
-              <h3>
-                {item.title}
-              </h3>
-
+            <div className="brief">
               <p>
-                {item.summary}
+                • Arabica prices show short-term upward pressure
               </p>
-
+              <p>
+                • Supply risk rising in Brazil due to weather conditions
+              </p>
+              <p>
+                • USD strengthening slightly impacts import cost
+              </p>
+              <p>
+                • Mid-term trend remains cautiously bullish
+              </p>
             </div>
-          ))}
+          </div>
 
-        </div>
+          {/* NEWS */}
+          <div className="card">
+            <div className="card-title">News Feed</div>
 
-      </section>
-
-      {/* SIMILAR */}
-
-      <section className="panel">
-
-        <div className="section-title">
-          유사 과거 사례
-        </div>
-
-        <div className="similar-grid">
-
-          {similarEvents.map(
-            (item, index) => (
-              <div
-                key={index}
-                className="similar-card"
-              >
-
-                <h4>
-                  {
-                    item.today_article
-                      ?.title
-                  }
-                </h4>
-
-                <p>
-                  {
-                    item.similar_past
-                      ?.title
-                  }
-                </p>
-
-                <strong>
-
-                  +5일 :
-
-                  {" "}
-
-                  {
-                    item.similar_past
-                      ?.price_changes?.[
-                      "+5d"
-                    ]?.arabica_pct
-                  }
-
-                  %
-
-                </strong>
-
-              </div>
-            )
-          )}
-
-        </div>
-
-      </section>
-
-      {/* TREND */}
-
-      <section className="panel">
-
-        <div className="section-title">
-          트렌딩 키워드
-        </div>
-
-        <div className="tag-container">
-
-          {trending.map((item) => (
-            <div
-              key={item.entity}
-              className="tag"
-            >
-              {item.entity}
+            <div className="news-list">
+              {news.slice(0, 6).map((item, i) => (
+                <div className="news-item" key={i}>
+                  <div className="news-title">{item.title}</div>
+                  <div className="news-meta">{item.source}</div>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
 
         </div>
 
-      </section>
+        {/* RIGHT COLUMN */}
+        <div className="right-col">
 
-      {/* SEARCH */}
+          {/* CHART */}
+          <div className="card large">
+            <div className="card-title">Price Trend + Forecast</div>
 
-      <section className="panel">
+            <div className="chart-box">
+              <div className="line actual"></div>
+              <div className="line predict"></div>
+            </div>
+          </div>
 
-        <div className="section-title">
-          뉴스 검색
+          {/* MATRIX */}
+          <div className="card">
+            <div className="card-title">Feature Impact</div>
+
+            <div className="matrix">
+              <div>USD/KRW</div>
+              <div>31%</div>
+
+              <div>News</div>
+              <div>24%</div>
+
+              <div>Futures</div>
+              <div>18%</div>
+
+              <div>Supply</div>
+              <div>15%</div>
+            </div>
+          </div>
+
         </div>
 
-        <form
-          onSubmit={searchNews}
-          className="search-form"
-        >
+      </div>
 
+      {/* BOTTOM SEARCH */}
+      <div className="card search-card">
+
+        <div className="card-title">Search</div>
+
+        <form onSubmit={searchNews} className="search">
           <input
             value={searchQuery}
-            onChange={(e) =>
-              setSearchQuery(
-                e.target.value
-              )
-            }
-            placeholder="브라질 가뭄"
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search news..."
           />
-
-          <button>
-            검색
-          </button>
-
+          <button>Search</button>
         </form>
 
-        <div className="search-result">
-
-          {searchResult.map((item) => (
-            <div
-              className="search-card"
-              key={item.id}
-            >
-
-              <h4>
-                {item.title}
-              </h4>
-
-              <p>
-                {item.description}
-              </p>
-
+        <div className="search-results">
+          {searchResult.map((item, i) => (
+            <div key={i} className="result">
+              <div className="result-title">{item.title}</div>
+              <div className="result-desc">{item.description}</div>
             </div>
           ))}
-
         </div>
 
-      </section>
+      </div>
 
     </div>
   );
