@@ -266,10 +266,15 @@ export default function App() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [now, setNow] = useState(new Date());
 
+  // 차트 탭 상태
+  const [chartTab, setChartTab] = useState("short"); // "short" | "mid"
+
+  const [chartTab, setChartTab] = useState("short"); // "short" | "mid"
+
   // 모델 예측 데이터 (API 연동 예정)
-  const modelShortDir = null;   // "up" | "down" | null — API 연동 후 채워짐
-  const modelMidDir = null;     // "up" | "down" | null — API 연동 후 채워짐
-  const modelShortProb = null;  // 단기 상승 확률
+  const modelShortDir = null;
+  const modelMidDir = null;
+  const modelShortProb = null;
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 60000);
@@ -489,18 +494,65 @@ export default function App() {
           </div>
 
           <div className="col-right">
-            {/* 가격 추이 + 모델 예측 — 단기/중장기 탭으로 변경 */}
+            {/* 가격 추이 + 모델 예측 */}
             <div className="section-card chart-card">
               <div className="section-header">
                 <span className="section-title">가격 추이 + 모델 예측</span>
                 <div className="chart-tabs">
-                  <span className="chart-tab active">단기</span>
-                  <span className="chart-tab">중장기</span>
+                  <button className={`chart-tab${chartTab === "short" ? " active" : ""}`} onClick={() => setChartTab("short")}>단기</button>
+                  <button className={`chart-tab${chartTab === "mid" ? " active" : ""}`} onClick={() => setChartTab("mid")}>중장기</button>
                 </div>
               </div>
-              <div className="chart-placeholder-inner">
-                <div className="chart-overlay-text">모델 API 연동 예정</div>
-              </div>
+
+              {chartTab === "short" ? (
+                <>
+                  <div className="chart-placeholder-inner">
+                    <svg viewBox="0 0 400 100" className="placeholder-chart-svg" aria-hidden="true" preserveAspectRatio="none">
+                      <defs>
+                        <linearGradient id="gradShort" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#4a3728" stopOpacity="0.10"/>
+                          <stop offset="100%" stopColor="#4a3728" stopOpacity="0.01"/>
+                        </linearGradient>
+                      </defs>
+                      <path d="M0,72 C40,68 70,60 110,52 C150,44 170,50 210,42 C250,34 270,38 310,28 C340,22 370,18 400,14" fill="none" stroke="#9e9a94" strokeWidth="1.5"/>
+                      <path d="M0,72 C40,68 70,60 110,52 C150,44 170,50 210,42 C250,34 270,38 310,28 C340,22 370,18 400,14 L400,100 L0,100 Z" fill="url(#gradShort)"/>
+                      <path d="M280,30 C310,24 350,18 400,12" fill="none" stroke="#4a3728" strokeWidth="1.5" strokeDasharray="5 3" opacity="0.7"/>
+                      <circle cx="280" cy="30" r="3" fill="#4a3728" opacity="0.6"/>
+                    </svg>
+                    <div className="chart-overlay-text">단기 예측 · 모델 API 연동 예정</div>
+                  </div>
+                  <div className="chart-meta-row">
+                    <span className="chart-meta-item"><span className="chart-legend-dot real"/>실제가</span>
+                    <span className="chart-meta-item"><span className="chart-legend-dash"/>단기 예측</span>
+                    <span className="chart-meta-tag">horizon: 1~5일 · ARIMA+XGB</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="chart-placeholder-inner">
+                    <svg viewBox="0 0 400 100" className="placeholder-chart-svg" aria-hidden="true" preserveAspectRatio="none">
+                      <defs>
+                        <linearGradient id="gradMid" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#4a3728" stopOpacity="0.08"/>
+                          <stop offset="100%" stopColor="#4a3728" stopOpacity="0.01"/>
+                        </linearGradient>
+                      </defs>
+                      <path d="M200,38 C240,28 290,16 400,8 L400,36 C290,44 240,52 200,54 Z" fill="#4a3728" opacity="0.07"/>
+                      <path d="M0,75 C50,70 90,62 140,56 C180,52 200,54 200,46" fill="none" stroke="#9e9a94" strokeWidth="1.5"/>
+                      <path d="M0,75 C50,70 90,62 140,56 C180,52 200,54 200,46 L200,100 L0,100 Z" fill="url(#gradMid)"/>
+                      <path d="M200,46 C240,36 290,24 400,18" fill="none" stroke="#4a3728" strokeWidth="1.5" strokeDasharray="6 3" opacity="0.65"/>
+                      <circle cx="200" cy="46" r="3" fill="#4a3728" opacity="0.6"/>
+                    </svg>
+                    <div className="chart-overlay-text">중장기 예측 · 모델 API 연동 예정</div>
+                  </div>
+                  <div className="chart-meta-row">
+                    <span className="chart-meta-item"><span className="chart-legend-dot real"/>실제가</span>
+                    <span className="chart-meta-item"><span className="chart-legend-dash"/>중장기 예측</span>
+                    <span className="chart-meta-item"><span className="chart-legend-band"/>예측 범위</span>
+                    <span className="chart-meta-tag">horizon: 14일+ · 앙상블</span>
+                  </div>
+                </>
+              )}
 
               <PurchaseMatrix shortDir={modelShortDir} midDir={modelMidDir} />
             </div>
