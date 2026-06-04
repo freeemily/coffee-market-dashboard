@@ -333,8 +333,8 @@ export default function App() {
       <header className="header">
         <div className="header-left">
           <span className="logo-dot" />
-          <span className="logo-text">BEAN PULSE</span>
-          <span className="logo-sub">생두 시장 인텔리전스</span>
+          <span className="logo-text">BEAN MARKET</span>
+          <span className="logo-sub">생두 시장 지표</span>
         </div>
         <div className="header-right">
           <span className="header-time">{nowStr} KST 기준</span>
