@@ -269,8 +269,6 @@ export default function App() {
   // 차트 탭 상태
   const [chartTab, setChartTab] = useState("short"); // "short" | "mid"
 
-  const [chartTab, setChartTab] = useState("short"); // "short" | "mid"
-
   // 모델 예측 데이터 (API 연동 예정)
   const modelShortDir = null;
   const modelMidDir = null;
