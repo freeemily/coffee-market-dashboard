@@ -9,8 +9,22 @@ const NEWS_API_BASE = process.env.NEWS_API_BASE || 'http://34.50.27.50:8000';
 
 // PostgreSQL 연결
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
+  host: process.env.DB_HOST,
+  port: parseInt(process.env.DB_PORT || '5432', 10),
+  database: process.env.DB_NAME,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  ssl: { rejectUnauthorized: false },
+});
+
+// DB 연결 확인
+pool.connect((err, client, release) => {
+  if (err) {
+    console.error('[DB] 연결 실패:', err.message);
+  } else {
+    console.log('[DB] 연결 성공');
+    release();
+  }
 });
 
 app.use(cors());
