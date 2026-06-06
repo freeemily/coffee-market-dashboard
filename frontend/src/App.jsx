@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import "./App.css";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8080"; // 실제 사용 중인 백엔드 주소로 맞게 변경하세요
+const API_BASE = import.meta.env.VITE_API_BASE || "https://coffee-market-dashboard-production.up.railway.app";
 
 function sentimentLabel(score) {
   if (score === null || score === undefined) return { label: "중립", cls: "neutral" };
@@ -191,7 +191,9 @@ function SearchBar({ onSearch }) {
   );
 }
 
+// 매입 전략 매트릭스: 모델 예측 데이터 기반으로 현재 상태 하이라이트
 function PurchaseMatrix({ shortDir, midDir }) {
+  // shortDir: "up" | "down" | null, midDir: "up" | "down" | null
   const cells = [
     { row: "mid_up",   col: "short_up",   label: "즉시 선매입",  cls: "action-buy" },
     { row: "mid_up",   col: "short_down", label: "분할 매수",    cls: "action-split" },
@@ -212,40 +214,40 @@ function PurchaseMatrix({ shortDir, midDir }) {
         {cells.slice(0, 2).map((cell) => {
           const isActive = activeRow === cell.row && activeCol === cell.col;
           return (
-            <div key={`cell-${cell.row}-${cell.col}`} style={{display: 'contents'}}>
+            <>
               {cell.col === "short_up" && (
                 <div key={`label-${cell.row}`} className="matrix-rowlabel">
                   {cell.row === "mid_up" ? "중장기 ↑" : "중장기 ↓"}
                 </div>
               )}
-              <div
+              <div key={`${cell.row}-${cell.col}`}
                 className={`matrix-cell ${cell.cls}${isActive ? " matrix-active" : ""}`}>
                 {isActive && <span className="matrix-active-dot">▶ </span>}
                 {cell.label}
               </div>
-            </div>
+            </>
           );
         })}
         {cells.slice(2, 4).map((cell) => {
           const isActive = activeRow === cell.row && activeCol === cell.col;
           return (
-            <div key={`cell-${cell.row}-${cell.col}`} style={{display: 'contents'}}>
+            <>
               {cell.col === "short_up" && (
                 <div key={`label-${cell.row}`} className="matrix-rowlabel">
                   {cell.row === "mid_up" ? "중장기 ↑" : "중장기 ↓"}
                 </div>
               )}
-              <div
+              <div key={`${cell.row}-${cell.col}`}
                 className={`matrix-cell ${cell.cls}${isActive ? " matrix-active" : ""}`}>
                 {isActive && <span className="matrix-active-dot">▶ </span>}
                 {cell.label}
               </div>
-            </div>
+            </>
           );
         })}
       </div>
       {(!shortDir || !midDir) && (
-        <p className="matrix-note">데이터 동기화 중...</p>
+        <p className="matrix-note">모델 API 연동 후 현재 상태 자동 표시</p>
       )}
     </div>
   );
@@ -257,17 +259,20 @@ export default function App() {
   const [trending, setTrending] = useState([]);
   const [similar, setSimilar] = useState([]);
   const [searchResults, setSearchResults] = useState(null);
-  
-  // DB 연동 데이터 상태 추가
-  const [predictions, setPredictions] = useState({ short: null, mid: null });
-
-  const [loading, setLoading] = useState({ news: true, signal: true, trending: true, similar: true, predictions: true });
+  const [loading, setLoading] = useState({ news: true, signal: true, trending: true, similar: true });
   const [error, setError] = useState({});
   const [activeTab, setActiveTab] = useState("news");
   const [selectedNews, setSelectedNews] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [now, setNow] = useState(new Date());
-  const [chartTab, setChartTab] = useState("short"); 
+
+  // 차트 탭 상태
+  const [chartTab, setChartTab] = useState("short"); // "short" | "mid"
+
+  // 모델 예측 데이터 (API 연동 예정)
+  const modelShortDir = null;
+  const modelMidDir = null;
+  const modelShortProb = null;
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 60000);
@@ -296,9 +301,6 @@ export default function App() {
     fetchJSON("/api/news/signal?days=30", setSignal, "signal");
     fetchJSON("/api/news/trending?days=7", (d) => setTrending(d.trending || []), "trending");
     fetchJSON("/api/news/similar/today?top_n=3", (d) => setSimilar(d.results || []), "similar");
-    
-    // DB에서 예측 모델 데이터 Fetch
-    fetchJSON("/api/predictions/latest", setPredictions, "predictions");
   }, [fetchJSON]);
 
   const handleSearch = async (q) => {
@@ -324,11 +326,6 @@ export default function App() {
     hour: "2-digit", minute: "2-digit", hour12: false,
   });
 
-  // DB에서 불러온 방향 및 확률 계산 (1: 상승, 0: 하락)
-  const modelShortDir = predictions.short?.direction === 1 ? "up" : predictions.short?.direction === 0 ? "down" : null;
-  const modelMidDir = predictions.mid?.direction === 1 ? "up" : predictions.mid?.direction === 0 ? "down" : null;
-  const modelShortProb = predictions.short?.probability_up;
-
   return (
     <div className="app">
       <header className="header">
@@ -347,69 +344,27 @@ export default function App() {
           <div className="kpi-card kpi-model">
             <span className="kpi-label">ICE 아라비카</span>
             <div className="kpi-value-row">
-              <span className="kpi-value">
-                {predictions.short?.base_features?.arabica_close != null
-                  ? predictions.short.base_features.arabica_close.toFixed(2)
-                  : predictions.mid?.base_features?.arabica_close != null
-                  ? predictions.mid.base_features.arabica_close.toFixed(2)
-                  : "–"}
-              </span>
+              <span className="kpi-value">–</span>
               <span className="kpi-unit">¢/lb</span>
             </div>
-            <span className="kpi-note kpi-model-note">
-              {predictions.short?.last_data_date ? `기준일: ${predictions.short.last_data_date}` : "모델 연동 대기중"}
-            </span>
+            <span className="kpi-note kpi-model-note">모델 API 연동 예정</span>
           </div>
 
           <div className="kpi-card kpi-model">
             <span className="kpi-label">USD/KRW</span>
             <div className="kpi-value-row">
-              <span className="kpi-value">
-                {predictions.short?.base_features?.usdkrw != null
-                  ? predictions.short.base_features.usdkrw.toFixed(0)
-                  : predictions.mid?.base_features?.usdkrw != null
-                  ? predictions.mid.base_features.usdkrw.toFixed(0)
-                  : "–"}
-              </span>
+              <span className="kpi-value">–</span>
               <span className="kpi-unit">원</span>
             </div>
-            <span className="kpi-note kpi-model-note">
-              {predictions.short?.last_data_date ? `기준일: ${predictions.short.last_data_date}` : "모델 연동 대기중"}
-            </span>
+            <span className="kpi-note kpi-model-note">모델 API 연동 예정</span>
           </div>
 
-          <div className={`kpi-card kpi-model${modelShortDir === "up" ? " bullish" : modelShortDir === "down" ? " bearish" : ""}`}>
-            <span className="kpi-label">단기 모델 (1일)</span>
+          <div className="kpi-card kpi-model">
+            <span className="kpi-label">단기 모델</span>
             <div className="kpi-value-row">
-              {loading.predictions ? (
-                <span className="kpi-loading">로딩중...</span>
-              ) : (
-                <>
-                  <span className={`kpi-value ${modelShortDir === "up" ? "bullish" : modelShortDir === "down" ? "bearish" : ""}`}>
-                    {modelShortProb != null ? `${(modelShortProb * 100).toFixed(1)}%` : '–%'}
-                  </span>
-                  {modelShortDir && <span className="kpi-dir-badge">{modelShortDir === "up" ? "↑ 상승" : "↓ 하락"}</span>}
-                </>
-              )}
+              <span className="kpi-value">–%</span>
             </div>
-            <span className="kpi-note kpi-model-note">상승 확률 · ARIMA+XGB · horizon 1일</span>
-          </div>
-
-          <div className={`kpi-card kpi-model${modelMidDir === "up" ? " bullish" : modelMidDir === "down" ? " bearish" : ""}`}>
-            <span className="kpi-label">중장기 모델 (20일)</span>
-            <div className="kpi-value-row">
-              {loading.predictions ? (
-                <span className="kpi-loading">로딩중...</span>
-              ) : (
-                <>
-                  <span className={`kpi-value ${modelMidDir === "up" ? "bullish" : modelMidDir === "down" ? "bearish" : ""}`}>
-                    {predictions.mid?.probability_up != null ? `${(predictions.mid.probability_up * 100).toFixed(1)}%` : '–%'}
-                  </span>
-                  {modelMidDir && <span className="kpi-dir-badge">{modelMidDir === "up" ? "↑ 상승" : "↓ 하락"}</span>}
-                </>
-              )}
-            </div>
-            <span className="kpi-note kpi-model-note">상승 확률 · XGBoost · horizon 20일</span>
+            <span className="kpi-note kpi-model-note">상승 확률 · ARIMA+XGB</span>
           </div>
 
           <div className={`kpi-card kpi-live ${sig.cls}`}>
@@ -433,6 +388,7 @@ export default function App() {
 
         <div className="grid-main">
           <div className="col-left">
+            {/* AI 브리핑 placeholder */}
             <div className="section-card briefing-card">
               <div className="section-header">
                 <span className="section-title">AI 데일리 브리핑</span>
@@ -466,6 +422,7 @@ export default function App() {
 
             <SearchBar onSearch={handleSearch} />
 
+            {/* 뉴스 피드 / 유사 과거 사건 탭 — 스크롤 박스 */}
             <div className="section-card news-section-card">
               <div className="tab-bar">
                 <button className={`tab-btn ${activeTab === "news" ? "active" : ""}`} onClick={() => setActiveTab("news")}>
@@ -535,6 +492,7 @@ export default function App() {
           </div>
 
           <div className="col-right">
+            {/* 가격 추이 + 모델 예측 */}
             <div className="section-card chart-card">
               <div className="section-header">
                 <span className="section-title">가격 추이 + 모델 예측</span>
@@ -559,16 +517,12 @@ export default function App() {
                       <path d="M280,30 C310,24 350,18 400,12" fill="none" stroke="#4a3728" strokeWidth="1.5" strokeDasharray="5 3" opacity="0.7"/>
                       <circle cx="280" cy="30" r="3" fill="#4a3728" opacity="0.6"/>
                     </svg>
-                    <div className="chart-overlay-text">
-                      {loading.predictions ? '로딩 중...' : predictions.short
-                        ? `${predictions.short.direction_label || (predictions.short.direction === 1 ? '상승' : '하락')} · ${(predictions.short.probability_up * 100).toFixed(1)}%`
-                        : '데이터 없음'}
-                    </div>
+                    <div className="chart-overlay-text">단기 예측 · 모델 API 연동 예정</div>
                   </div>
                   <div className="chart-meta-row">
                     <span className="chart-meta-item"><span className="chart-legend-dot real"/>실제가</span>
                     <span className="chart-meta-item"><span className="chart-legend-dash"/>단기 예측</span>
-                    <span className="chart-meta-tag">horizon: 1일 · ARIMA+XGB · {predictions.short ? `${(predictions.short.probability_up * 100).toFixed(1)}% 상승확률` : '로딩중'}</span>
+                    <span className="chart-meta-tag">horizon: 1~5일 · ARIMA+XGB</span>
                   </div>
                 </>
               ) : (
@@ -587,17 +541,13 @@ export default function App() {
                       <path d="M200,46 C240,36 290,24 400,18" fill="none" stroke="#4a3728" strokeWidth="1.5" strokeDasharray="6 3" opacity="0.65"/>
                       <circle cx="200" cy="46" r="3" fill="#4a3728" opacity="0.6"/>
                     </svg>
-                    <div className="chart-overlay-text">
-                      {loading.predictions ? '로딩 중...' : predictions.mid
-                        ? `${predictions.mid.direction_label || (predictions.mid.direction === 1 ? '상승' : '하락')} · ${(predictions.mid.probability_up * 100).toFixed(1)}%`
-                        : '데이터 없음'}
-                    </div>
+                    <div className="chart-overlay-text">중장기 예측 · 모델 API 연동 예정</div>
                   </div>
                   <div className="chart-meta-row">
                     <span className="chart-meta-item"><span className="chart-legend-dot real"/>실제가</span>
                     <span className="chart-meta-item"><span className="chart-legend-dash"/>중장기 예측</span>
                     <span className="chart-meta-item"><span className="chart-legend-band"/>예측 범위</span>
-                    <span className="chart-meta-tag">horizon: 20일 · XGBoost · {predictions.mid ? `${(predictions.mid.probability_up * 100).toFixed(1)}% 상승확률` : '로딩중'}</span>
+                    <span className="chart-meta-tag">horizon: 14일+ · 앙상블</span>
                   </div>
                 </>
               )}
@@ -605,6 +555,7 @@ export default function App() {
               <PurchaseMatrix shortDir={modelShortDir} midDir={modelMidDir} />
             </div>
 
+            {/* 감성 트렌드 */}
             <div className="section-card signal-card">
               <div className="section-header">
                 <span className="section-title">감성 트렌드</span>
@@ -635,6 +586,7 @@ export default function App() {
               )}
             </div>
 
+            {/* 트렌딩 */}
             <div className="section-card trending-card">
               <div className="section-header">
                 <span className="section-title">트렌딩 키워드</span>
@@ -649,49 +601,28 @@ export default function App() {
               )}
             </div>
 
+            {/* Feature 현황 — 계절성/과거 리스크 탭 제거 */}
             <div className="section-card feature-card">
               <div className="feature-card-header">
                 <span className="section-title">Feature 현황</span>
               </div>
               <table className="feature-table">
                 <tbody>
-                  {(() => {
-                    const bf = predictions.short?.base_features || {};
-                    const af = predictions.short?.arima_features || {};
-                    const midBf = predictions.mid?.base_features || {};
-                    const arabicaClose = bf.arabica_close ?? bf.close ?? midBf.arabica_close ?? midBf.close;
-                    const rsi = bf.rsi_14 ?? bf.rsi ?? midBf.rsi_14 ?? midBf.rsi;
-                    const usdkrw = bf.usdkrw ?? bf.usd_krw ?? midBf.usdkrw ?? midBf.usd_krw;
-                    const dxy = bf.dxy ?? midBf.dxy;
-                    const arimaResidual = af.residual ?? af.arima_residual;
-                    const pctile30 = bf.price_pct_30d ?? midBf.price_pct_30d;
-                    return [
-                      { label: "ICE 아라비카 종가", val: arabicaClose != null ? arabicaClose.toFixed(2) : "–", note: "¢/lb", cls: "" },
-                      { label: "RSI (14일)", val: rsi != null ? rsi.toFixed(1) : "–", note: "", cls: "" },
-                      { label: "USD/KRW 환율", val: usdkrw != null ? usdkrw.toFixed(0) : "–", note: "₩", cls: "" },
-                      { label: "DXY (달러 인덱스)", val: dxy != null ? dxy.toFixed(2) : "–", note: "", cls: "" },
-                      {
-                        label: "뉴스 감성 점수",
-                        val: avgSent ? (avgSent * 2 - 1).toFixed(2) : "–",
-                        note: sig.label,
-                        cls: sig.cls,
-                      },
-                      { label: "ARIMA 잔차", val: arimaResidual != null ? arimaResidual.toFixed(4) : "–", note: "", cls: "" },
-                      {
-                        label: "단기 상승 확률 (ARIMA+XGB · 1일)",
-                        val: modelShortProb != null ? `${(modelShortProb * 100).toFixed(1)}%` : "–%",
-                        note: modelShortDir === "up" ? "↑ 상승" : modelShortDir === "down" ? "↓ 하락" : "",
-                        cls: modelShortDir === "up" ? "bullish" : modelShortDir === "down" ? "bearish" : "",
-                      },
-                      {
-                        label: "중장기 상승 확률 (XGBoost · 20일)",
-                        val: predictions.mid?.probability_up != null ? `${(predictions.mid.probability_up * 100).toFixed(1)}%` : "–%",
-                        note: modelMidDir === "up" ? "↑ 상승" : modelMidDir === "down" ? "↓ 하락" : "",
-                        cls: modelMidDir === "up" ? "bullish" : modelMidDir === "down" ? "bearish" : "",
-                      },
-                      { label: "30일 가격 백분위", val: pctile30 != null ? `${(pctile30 * 100).toFixed(0)}%` : "–", note: "", cls: "" },
-                    ];
-                  })().map((r) => (
+                  {[
+                    { label: "ICE 아라비카 종가", val: "–", note: "¢/lb", cls: "" },
+                    { label: "RSI (14일)", val: "–", note: "", cls: "" },
+                    { label: "USD/KRW 환율", val: "–", note: "", cls: "" },
+                    { label: "DXY (달러 인덱스)", val: "–", note: "", cls: "" },
+                    {
+                      label: "뉴스 감성 점수",
+                      val: avgSent ? (avgSent * 2 - 1).toFixed(2) : "–",
+                      note: sig.label,
+                      cls: sig.cls,
+                    },
+                    { label: "ARIMA 잔차", val: "–", note: "", cls: "" },
+                    { label: "XGBoost 상승 확률", val: modelShortProb ? `${(modelShortProb * 100).toFixed(1)}%` : "–%", note: "", cls: "" },
+                    { label: "30일 가격 백분위", val: "–", note: "", cls: "" },
+                  ].map((r) => (
                     <tr key={r.label}>
                       <td className="ft-label">{r.label}</td>
                       <td className={`ft-val ${r.cls}`}>{r.val}</td>
@@ -700,6 +631,7 @@ export default function App() {
                   ))}
                 </tbody>
               </table>
+              <p className="feature-model-note">* 모델 API 연동 후 실시간 업데이트</p>
             </div>
           </div>
         </div>
