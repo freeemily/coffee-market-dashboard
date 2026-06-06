@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.cjs",
   "scripts": {
-     "start": "node server.cjs"
+    "start": "node server.cjs"
   },
   "keywords": [],
   "author": "",
@@ -12,6 +12,7 @@
   "type": "commonjs",
   "dependencies": {
     "cors": "^2.8.6",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "pg": "^8.13.3"
   }
 }
