@@ -7,7 +7,6 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const NEWS_API_BASE = process.env.NEWS_API_BASE || 'http://34.50.27.50:8000';
 
-// PostgreSQL 연결
 const pool = new Pool({
   host:     process.env.DB_HOST,
   port:     parseInt(process.env.DB_PORT || '5432'),
@@ -26,19 +25,15 @@ async function proxyNews(path, res) {
   try {
     const url = `${NEWS_API_BASE}${path}`;
     console.log('[proxy]', url);
-
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 10000);
-
     const response = await fetch(url, { signal: controller.signal });
     clearTimeout(timer);
-
     if (!response.ok) {
       const text = await response.text();
       console.error('[proxy error]', response.status, text);
       return res.status(response.status).json({ error: text });
     }
-
     const data = await response.json();
     return res.json(data);
   } catch (err) {
@@ -55,7 +50,6 @@ app.get('/api/news/search',       (req, res) => proxyNews(`/news/search?q=${enco
 app.get('/api/news/similar',      (req, res) => proxyNews(`/news/similar?q=${encodeURIComponent(req.query.q || '')}&top_k=${req.query.top_k || 3}`, res));
 
 // ── 모델 예측 API ────────────────────────────────────────
-
 app.get('/api/prediction/latest', async (req, res) => {
   try {
     const { rows } = await pool.query(`
@@ -68,7 +62,6 @@ app.get('/api/prediction/latest', async (req, res) => {
     `);
     return res.json({ predictions: rows });
   } catch (err) {
-    console.error('[db error] /api/prediction/latest', err);
     return res.status(500).json({ error: 'DB error', detail: err.message });
   }
 });
@@ -86,7 +79,6 @@ app.get('/api/prediction/short', async (req, res) => {
     `);
     return res.json({ predictions: rows });
   } catch (err) {
-    console.error('[db error] /api/prediction/short', err);
     return res.status(500).json({ error: 'DB error', detail: err.message });
   }
 });
@@ -104,44 +96,29 @@ app.get('/api/prediction/mid', async (req, res) => {
     `);
     return res.json({ predictions: rows });
   } catch (err) {
-    console.error('[db error] /api/prediction/mid', err);
     return res.status(500).json({ error: 'DB error', detail: err.message });
   }
 });
 
-// ── market_daily 확인용 임시 엔드포인트 ─────────────────
-app.get('/api/debug/market-columns', async (req, res) => {
+// ── 시장 데이터 (ICE 가격, 환율) ─────────────────────────
+app.get('/api/market/latest', async (req, res) => {
   try {
     const { rows } = await pool.query(`
-      SELECT column_name, data_type
-      FROM information_schema.columns
-      WHERE table_name = 'market_daily'
-      ORDER BY ordinal_position
+      SELECT date, arabica_close, arabica_pct_change, usdkrw, usdkrw_pct_change
+      FROM market_daily
+      ORDER BY date DESC
+      LIMIT 1
     `);
-    return res.json({ columns: rows });
+    return res.json({ market: rows[0] || null });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/api/debug/market-latest', async (req, res) => {
-  try {
-    const { rows } = await pool.query(`
-      SELECT * FROM market_daily ORDER BY date DESC LIMIT 1
-    `);
-    return res.json({ row: rows[0] || null });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'DB error', detail: err.message });
   }
 });
 
 // ── Health ───────────────────────────────────────────────
 app.get('/health', async (req, res) => {
   let dbOk = false;
-  try {
-    await pool.query('SELECT 1');
-    dbOk = true;
-  } catch (_) {}
+  try { await pool.query('SELECT 1'); dbOk = true; } catch (_) {}
   res.json({ status: 'ok', db: dbOk ? 'connected' : 'error', timestamp: new Date().toISOString() });
 });
 

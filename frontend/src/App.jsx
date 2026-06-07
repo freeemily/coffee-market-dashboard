@@ -272,6 +272,9 @@ export default function App() {
   // 모델 예측 데이터
   const [modelPrediction, setModelPrediction] = useState({ short: null, mid: null, loading: true, error: null });
 
+  // 시장 데이터 (ICE 가격, 환율)
+  const [market, setMarket] = useState(null);
+
   const modelShortDir = modelPrediction.short
     ? (modelPrediction.short.direction === 1 ? 'up' : 'down')
     : null;
@@ -307,6 +310,12 @@ export default function App() {
     fetchJSON("/api/news/signal?days=30", setSignal, "signal");
     fetchJSON("/api/news/trending?days=7", (d) => setTrending(d.trending || []), "trending");
     fetchJSON("/api/news/similar/today?top_n=3", (d) => setSimilar(d.results || []), "similar");
+
+    // 시장 데이터 fetch
+    fetch(`${API_BASE}/api/market/latest`)
+      .then(r => r.json())
+      .then(d => setMarket(d.market || null))
+      .catch(() => {});
 
     // 모델 예측 fetch
     (async () => {
@@ -369,22 +378,26 @@ export default function App() {
 
       <main className="main">
         <section className="kpi-row">
-          <div className="kpi-card kpi-model">
+          <div className={`kpi-card kpi-live ${market?.arabica_pct_change > 0 ? 'bullish' : market?.arabica_pct_change < 0 ? 'bearish' : ''}`}>
             <span className="kpi-label">ICE 아라비카</span>
             <div className="kpi-value-row">
-              <span className="kpi-value">–</span>
+              <span className="kpi-value">{market ? market.arabica_close.toFixed(2) : '–'}</span>
               <span className="kpi-unit">¢/lb</span>
             </div>
-            <span className="kpi-note kpi-model-note">모델 API 연동 예정</span>
+            <span className="kpi-note">
+              {market ? `전일比 ${market.arabica_pct_change >= 0 ? '+' : ''}${market.arabica_pct_change.toFixed(2)}%` : '–'}
+            </span>
           </div>
 
-          <div className="kpi-card kpi-model">
+          <div className={`kpi-card kpi-live ${market?.usdkrw_pct_change > 0 ? 'bullish' : market?.usdkrw_pct_change < 0 ? 'bearish' : ''}`}>
             <span className="kpi-label">USD/KRW</span>
             <div className="kpi-value-row">
-              <span className="kpi-value">–</span>
+              <span className="kpi-value">{market ? Math.round(market.usdkrw).toLocaleString() : '–'}</span>
               <span className="kpi-unit">원</span>
             </div>
-            <span className="kpi-note kpi-model-note">모델 API 연동 예정</span>
+            <span className="kpi-note">
+              {market ? `전일比 ${market.usdkrw_pct_change >= 0 ? '+' : ''}${market.usdkrw_pct_change.toFixed(2)}%` : '–'}
+            </span>
           </div>
 
           <div className={`kpi-card kpi-live ${modelShortDir === 'up' ? 'bullish' : modelShortDir === 'down' ? 'bearish' : ''}`}>
@@ -665,9 +678,9 @@ export default function App() {
               <table className="feature-table">
                 <tbody>
                   {[
-                    { label: "ICE 아라비카 종가", val: "–", note: "¢/lb", cls: "" },
-                    { label: "RSI (14일)", val: "–", note: "", cls: "" },
-                    { label: "USD/KRW 환율", val: "–", note: "", cls: "" },
+                    { label: "ICE 아라비카 종가", val: market ? market.arabica_close.toFixed(2) : "–", note: "¢/lb", cls: "" },
+                    { label: "RSI (14일)", val: modelPrediction.short?.base_features?.coffee_rsi_14 ? modelPrediction.short.base_features.coffee_rsi_14.toFixed(1) : "–", note: "", cls: "" },
+                    { label: "USD/KRW 환율", val: market ? Math.round(market.usdkrw).toLocaleString() : "–", note: "원", cls: "" },
                     { label: "DXY (달러 인덱스)", val: "–", note: "", cls: "" },
                     {
                       label: "뉴스 감성 점수",
