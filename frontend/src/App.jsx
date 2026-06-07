@@ -280,6 +280,9 @@ export default function App() {
     : null;
   const modelShortProb = modelPrediction.short?.probability_up ?? null;
 
+  // 시장 데이터 (ICE 가격, 환율)
+  const [market, setMarket] = useState(null);
+
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(t);
@@ -308,6 +311,12 @@ export default function App() {
     fetchJSON("/api/news/trending?days=7", (d) => setTrending(d.trending || []), "trending");
     fetchJSON("/api/news/similar/today?top_n=3", (d) => setSimilar(d.results || []), "similar");
 
+    // 시장 데이터 fetch
+    fetch(`${API_BASE}/api/market/latest`)
+      .then(r => r.json())
+      .then(d => setMarket(d.market || null))
+      .catch(() => {});
+
     // 모델 예측 fetch
     (async () => {
       try {
@@ -321,7 +330,7 @@ export default function App() {
         // horizon=1 단기, horizon 중 가장 작은 중장기 대표값 사용
         const shortPred = shortData.predictions?.find(p => p.horizon === 1)
           ?? shortData.predictions?.[0] ?? null;
-        const midPred   = midData.predictions?.find(p => p.horizon === 14)
+        const midPred   = midData.predictions?.find(p => p.horizon === 20)
           ?? midData.predictions?.[0] ?? null;
 
         setModelPrediction({ short: shortPred, mid: midPred, loading: false, error: null });
