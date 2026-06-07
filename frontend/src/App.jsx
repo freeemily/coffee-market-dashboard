@@ -541,8 +541,7 @@ export default function App() {
             {/* AI 브리핑 */}
             <div className="section-card briefing-card">
               <div className="section-header">
-                <span className="section-title">AI 데일리 브리핑</span>
-                <span className="badge-llm">LLM 생성</span>
+                <span className="section-title">데일리 브리핑</span>
                 {briefing.generatedAt && (
                   <span className="section-note">
                     {briefing.generatedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })} 생성
@@ -682,7 +681,7 @@ export default function App() {
             {/* 가격 추이 + 모델 예측 */}
             <div className="section-card chart-card">
               <div className="section-header">
-                <span className="section-title">가격 추이 + 모델 예측</span>
+                <span className="section-title">모델 예측 + 매입전략</span>
               </div>
 
               {/* 단기 예측 */}
@@ -733,10 +732,6 @@ export default function App() {
                             <div className="rsi-zone-high" />
                             <div className={`rsi-thumb ${rsiPct < 30 ? 'bullish' : rsiPct > 70 ? 'bearish' : 'neutral'}`}
                               style={{ left: `calc(${rsiPct}% - 5px)` }} />
-                          </div>
-                          <div className="pred-bar-labels">
-                            <span>과매도 &lt;30</span>
-                            <span>과매수 &gt;70</span>
                           </div>
                         </div>
                       )}
