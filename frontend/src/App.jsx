@@ -358,62 +358,87 @@ export default function App() {
   const avgSent = signal?.avg_sentiment;
   const todayCount = todayNews.length;
 
-  // AI 브리핑 state
-  const [briefing, setBriefing] = useState({ text: null, loading: false, error: null, generatedAt: null });
-
-  const generateBriefing = useCallback(async () => {
-    // 데이터가 충분히 로드됐는지 확인
+  // 템플릿 기반 브리핑 생성 (비전공자/구매 담당자용)
+  const generateBriefing = useCallback(() => {
     if (!market && !modelPrediction.short && !signal) return;
-    setBriefing(prev => ({ ...prev, loading: true, error: null }));
 
-    const features = {
-      icePrice: market?.arabica_close?.toFixed(2) ?? "–",
-      usdkrw: market ? Math.round(market.usdkrw).toLocaleString() : "–",
-      rsi: modelPrediction.short?.base_features?.coffee_rsi_14?.toFixed(1) ?? "–",
-      arimaResid: modelPrediction.short?.arima_features?.arima_resid_1d?.toFixed(4) ?? "–",
-      xgbProb: modelPrediction.short ? `${(modelPrediction.short.probability_up * 100).toFixed(1)}%` : "–",
-      xgbDir: modelPrediction.short?.direction === 1 ? "상승" : modelPrediction.short?.direction === -1 ? "하락" : "–",
-      sentiment: avgSent ? `${(avgSent * 100).toFixed(1)}` : "–",
-      sentimentLabel: sig.label,
-      newsCount: todayCount,
-      tradeDate: market?.trade_date ?? "최신",
-    };
+    const icePrice = market?.arabica_close ?? null;
+    const usdkrw = market ? Math.round(market.usdkrw) : null;
+    const rsi = modelPrediction.short?.base_features?.coffee_rsi_14 ?? null;
+    const xgbProb = modelPrediction.short?.probability_up ?? null;
+    const xgbDir = modelPrediction.short?.direction === 1 ? "up" : modelPrediction.short?.direction === -1 ? "down" : null;
+    const pctChange = market?.arabica_pct_change ?? null;
+    const isModelUp = xgbDir === "up";
+    const isModelDown = xgbDir === "down";
+    const isSentBullish = sig.cls === "bullish";
+    const isSentBearish = sig.cls === "bearish";
+    const isRsiOversold = rsi != null && rsi < 30;
+    const isRsiOverbought = rsi != null && rsi > 70;
 
-    const prompt = `당신은 커피 생두 시장 전문 애널리스트입니다. 아래 실시간 데이터를 바탕으로 오늘의 생두 시장 브리핑을 한국어로 작성하세요.
-
-[현재 데이터]
-- ICE 아라비카 선물가: ${features.icePrice} ¢/lb (${features.tradeDate} 기준)
-- USD/KRW 환율: ${features.usdkrw} 원
-- RSI (14일): ${features.rsi}
-- ARIMA 잔차 (1일): ${features.arimaResid}
-- XGBoost 단기 예측: ${features.xgbProb} (${features.xgbDir})
-- 뉴스 감성 점수: ${features.sentiment} / 100 (${features.sentimentLabel})
-- 오늘 수집 뉴스: ${features.newsCount}건
-
-[작성 지침]
-- 3~4문장 이내로 간결하게 작성
-- 현재 시장 상황 요약 → 주요 리스크/기회 → 매입 시사점 순서
-- 숫자 데이터를 반드시 인용
-- 전문적이지만 실무자가 바로 활용할 수 있는 톤`;
-
-    try {
-      const res = await fetch(`${API_BASE}/api/briefing`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      setBriefing({ text: data.text, loading: false, error: null, generatedAt: new Date() });
-    } catch (e) {
-      setBriefing({ text: null, loading: false, error: e.message, generatedAt: null });
+    // ── 문장 1: 오늘 가격이 어제보다 어때? ──
+    let s1 = "";
+    if (icePrice) {
+      if (pctChange != null) {
+        if (pctChange > 1) s1 = `오늘 커피(아라비카) 국제 가격은 어제보다 ${pctChange.toFixed(2)}% 올라 ${icePrice.toFixed(2)} 센트/lb를 기록했어요.`;
+        else if (pctChange > 0) s1 = `오늘 커피 국제 가격은 어제와 비슷한 수준인 ${icePrice.toFixed(2)} 센트/lb예요. 소폭 올랐습니다.`;
+        else if (pctChange < -1) s1 = `오늘 커피(아라비카) 국제 가격은 어제보다 ${Math.abs(pctChange).toFixed(2)}% 내려 ${icePrice.toFixed(2)} 센트/lb를 기록했어요.`;
+        else s1 = `오늘 커피 국제 가격은 어제와 거의 같은 ${icePrice.toFixed(2)} 센트/lb예요. 소폭 내렸습니다.`;
+      } else {
+        s1 = `현재 커피(아라비카) 국제 가격은 ${icePrice.toFixed(2)} 센트/lb예요.`;
+      }
+      if (usdkrw) s1 += ` 달러 환율은 ${usdkrw.toLocaleString()}원으로, 환율이 높을수록 원화 매입 비용도 올라갑니다.`;
+    } else {
+      s1 = "현재 가격 데이터를 불러오는 중이에요.";
     }
+
+    // ── 문장 2: 가격이 많이 떨어졌나? 올랐나? ──
+    let s2 = "";
+    if (rsi != null) {
+      if (rsi < 30) s2 = `최근 가격이 꽤 많이 내려와 있는 상태예요. 지금이 바닥에 가깝다는 신호일 수 있어서, 조만간 반등할 가능성도 있습니다.`;
+      else if (rsi < 45) s2 = `가격이 최근 약세를 보이고 있어요. 아직 뚜렷한 반등 신호는 없지만, 더 크게 떨어질 가능성도 낮아지고 있는 구간이에요.`;
+      else if (rsi <= 55) s2 = `가격이 특별히 높지도 낮지도 않은 안정적인 구간이에요. 시장이 방향을 탐색하는 중으로 보입니다.`;
+      else if (rsi <= 70) s2 = `최근 가격이 꾸준히 오른 상태예요. 지금 사면 고점 매입이 될 수 있으니 타이밍을 조금 더 지켜보는 것도 좋아요.`;
+      else s2 = `가격이 단기적으로 많이 올라 있어요. 곧 조정이 올 수 있으니, 지금 대량 매입은 신중하게 판단하시길 권해요.`;
+    }
+
+    // ── 문장 3: 뉴스 분위기는? ──
+    let s3 = "";
+    if (avgSent != null) {
+      const count = todayCount;
+      const countStr = count > 0 ? ` 오늘 수집된 커피 관련 뉴스 ${count}건을 분석한 결과,` : "";
+      if (isSentBullish) s3 = `${countStr} 뉴스 분위기는 전반적으로 긍정적이에요. 산지 날씨나 수급 관련 좋은 소식이 많은 편입니다.`;
+      else if (isSentBearish) s3 = `${countStr} 뉴스 분위기는 다소 부정적이에요. 공급 과잉이나 수요 둔화 관련 소식이 나오고 있어 주의가 필요합니다.`;
+      else s3 = `${countStr} 뉴스 분위기는 특별히 좋지도 나쁘지도 않은 중립적인 상태예요.`;
+    }
+
+    // ── 문장 4: 오늘 사야 하나? ──
+    let s4 = "";
+    if (isRsiOversold && isModelUp && isSentBullish) {
+      s4 = "💡 오늘 매입 추천: 가격이 많이 내려왔고, 반등 신호와 긍정적인 뉴스가 겹치는 좋은 타이밍이에요. 소량씩 나눠서 매입하는 것을 추천드려요.";
+    } else if (isRsiOversold && isModelUp) {
+      s4 = "💡 분할 매입 고려: 가격이 많이 내려온 상태에서 반등 신호가 나오고 있어요. 한 번에 많이 사기보다는 조금씩 나눠서 매입하는 게 안전해요.";
+    } else if (isModelUp && isSentBullish) {
+      s4 = "💡 적극 매입 고려: 가격 상승 신호와 긍정적인 뉴스가 모두 맞아떨어지고 있어요. 필요한 물량을 미리 확보하는 전략이 유리할 수 있어요.";
+    } else if (isModelDown && isSentBearish) {
+      s4 = "⏸️ 매입 보류 권고: 가격이 더 내려올 가능성이 있어요. 급하게 사야 하는 상황이 아니라면, 조금 더 기다렸다가 매입하는 것이 좋을 것 같아요.";
+    } else if (isRsiOverbought && isModelDown) {
+      s4 = "⚠️ 신중한 접근 필요: 가격이 이미 많이 올라온 상태에서 하락 신호가 나오고 있어요. 지금은 대량 매입보다 관망이 유리해 보여요.";
+    } else if (isModelDown) {
+      s4 = "⏸️ 잠깐 기다려 보세요: 단기적으로 가격이 조금 더 내려올 수 있다는 신호가 있어요. 급하지 않다면 며칠 더 지켜보고 결정하는 것도 좋아요.";
+    } else {
+      s4 = "🔍 상황 지켜보기: 지금은 뚜렷한 방향이 없는 상태예요. 한 번에 많이 사기보다는 조금씩 나눠서 매입하거나, 며칠 더 추이를 보고 결정하시길 권해요.";
+    }
+
+    const text = [s1, s2, s3, s4].filter(Boolean).join("\n\n");
+    setBriefing({ text, loading: false, error: null, generatedAt: new Date() });
   }, [market, modelPrediction, signal, avgSent, sig, todayCount]);
 
-  // 데이터가 어느 정도 로드되면 자동 브리핑 생성
+  const [briefing, setBriefing] = useState({ text: null, loading: false, error: null, generatedAt: null });
+
+  // 데이터가 로드되면 자동 브리핑 생성
   useEffect(() => {
     const ready = market !== null && !modelPrediction.loading && !loading.signal;
-    if (ready && !briefing.text && !briefing.loading) {
+    if (ready && !briefing.text) {
       generateBriefing();
     }
   }, [market, modelPrediction.loading, loading.signal]);
@@ -538,7 +563,11 @@ export default function App() {
                 <div className="error-state small">브리핑 생성 실패: {briefing.error}</div>
               ) : briefing.text ? (
                 <div className="briefing-content">
-                  <p className="briefing-text">{briefing.text}</p>
+                  <p className="briefing-text">
+                    {briefing.text.split("\n\n").map((para, i) => (
+                      <span key={i} style={{ display: "block", marginBottom: i < briefing.text.split("\n\n").length - 1 ? "10px" : 0 }}>{para}</span>
+                    ))}
+                  </p>
                   <div className="briefing-features">
                     {[
                       { label: "ICE 선물가", val: market?.arabica_close?.toFixed(2) ? `${market.arabica_close.toFixed(2)}¢` : "–" },
