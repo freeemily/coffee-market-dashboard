@@ -397,18 +397,14 @@ export default function App() {
 - 전문적이지만 실무자가 바로 활용할 수 있는 톤`;
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch(`${API_BASE}/api/briefing`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          messages: [{ role: "user", content: prompt }],
-        }),
+        body: JSON.stringify({ prompt }),
       });
       const data = await res.json();
-      const text = data.content?.map(b => b.text || "").join("") ?? "";
-      setBriefing({ text, loading: false, error: null, generatedAt: new Date() });
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      setBriefing({ text: data.text, loading: false, error: null, generatedAt: new Date() });
     } catch (e) {
       setBriefing({ text: null, loading: false, error: e.message, generatedAt: null });
     }
