@@ -686,123 +686,151 @@ export default function App() {
               </div>
 
               {/* 단기 예측 */}
-              <div className="chart-section-label">
-                <span className="chart-section-tag">단기 · 1일 후 예측 · ARIMA+XGB</span>
-              </div>
-              <div className="chart-placeholder-inner">
+              <div className="pred-block">
+                <div className="pred-block-header">
+                  <span className="pred-block-title">단기 예측</span>
+                  <span className="pred-block-meta">1일 후 · ARIMA+XGB</span>
+                </div>
                 {modelPrediction.loading ? (
                   <div className="chart-no-data-msg">예측 데이터 로딩 중...</div>
                 ) : modelPrediction.short ? (() => {
                   const prob = modelPrediction.short.probability_up ?? 0.5;
                   const pct = Math.round(prob * 100);
                   const isUp = prob >= 0.5;
-                  const barColor = isUp ? "#16a34a" : "#dc2626";
                   const rsi = modelPrediction.short?.base_features?.coffee_rsi_14;
                   const rsiPct = rsi != null ? Math.min(Math.max(rsi, 0), 100) : null;
                   const arima = modelPrediction.short?.arima_features?.arima_resid_1d;
+                  const dir = modelPrediction.short.direction_label || (isUp ? '상승' : '하락');
                   return (
-                    <svg viewBox="0 0 400 110" className="placeholder-chart-svg" preserveAspectRatio="none">
-                      <text x="8" y="16" fontSize="10" fill="#9e9a94">상승확률</text>
-                      <rect x="8" y="22" width="384" height="14" rx="4" fill="#e8e4df"/>
-                      <rect x="8" y="22" width={384 * prob} height="14" rx="4" fill={barColor} opacity="0.85"/>
-                      <text x={8 + 384 * prob + (isUp ? 4 : -28)} y="33" fontSize="10" fill={barColor} fontWeight="600">{pct}%</text>
-                      {rsiPct != null && (<>
-                        <text x="8" y="54" fontSize="10" fill="#9e9a94">RSI (14일)  <tspan fill={rsiPct < 30 ? "#16a34a" : rsiPct > 70 ? "#dc2626" : "#4a3728"} fontWeight="600">{rsi.toFixed(1)}</tspan></text>
-                        <rect x="8" y="60" width="384" height="10" rx="3" fill="#e8e4df"/>
-                        <rect x="8" y="60" width={384 * 0.3} height="10" rx="3" fill="#16a34a" opacity="0.12"/>
-                        <rect x={8 + 384 * 0.7} y="60" width={384 * 0.3} height="10" rx="3" fill="#dc2626" opacity="0.12"/>
-                        <rect x={8 + 384 * (rsiPct / 100) - 3} y="57" width="6" height="16" rx="3" fill={rsiPct < 30 ? "#16a34a" : rsiPct > 70 ? "#dc2626" : "#4a3728"}/>
-                        <text x="8" y="82" fontSize="9" fill="#9e9a94" opacity="0.7">과매도</text>
-                        <text x="330" y="82" fontSize="9" fill="#9e9a94" opacity="0.7">과매수</text>
-                      </>)}
-                      {arima != null && (<>
-                        <text x="8" y="96" fontSize="10" fill="#9e9a94">
-                          ARIMA 잔차  <tspan fill={arima > 0 ? "#16a34a" : "#dc2626"} fontWeight="600">{arima > 0 ? "+" : ""}{arima.toFixed(4)}</tspan>
-                          <tspan fill="#9e9a94"> ({arima > 0 ? "상승 압력" : "하락 압력"})</tspan>
-                        </text>
-                      </>)}
-                    </svg>
+                    <div className="pred-body">
+                      {/* 방향 + 확률 히어로 */}
+                      <div className="pred-hero">
+                        <span className={`pred-direction ${isUp ? 'bullish' : 'bearish'}`}>{dir}</span>
+                        <span className={`pred-prob ${isUp ? 'bullish' : 'bearish'}`}>{pct}%</span>
+                        {modelPrediction.short.prediction_for_date && (
+                          <span className="pred-date">{modelPrediction.short.prediction_for_date.slice(0,10)} 기준</span>
+                        )}
+                      </div>
+                      {/* 상승확률 바 */}
+                      <div className="pred-metric">
+                        <div className="pred-metric-label">
+                          <span>상승확률</span>
+                          <span className={isUp ? 'bullish' : 'bearish'}>{pct}%</span>
+                        </div>
+                        <div className="pred-bar-track">
+                          <div className={`pred-bar-fill ${isUp ? 'bullish' : 'bearish'}`} style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                      {/* RSI */}
+                      {rsiPct != null && (
+                        <div className="pred-metric">
+                          <div className="pred-metric-label">
+                            <span>RSI <span className="pred-metric-sub">14일</span></span>
+                            <span className={rsiPct < 30 ? 'bullish' : rsiPct > 70 ? 'bearish' : ''}>{rsi.toFixed(1)}</span>
+                          </div>
+                          <div className="pred-bar-track rsi-track">
+                            <div className="rsi-zone-low" />
+                            <div className="rsi-zone-high" />
+                            <div className={`rsi-thumb ${rsiPct < 30 ? 'bullish' : rsiPct > 70 ? 'bearish' : 'neutral'}`}
+                              style={{ left: `calc(${rsiPct}% - 5px)` }} />
+                          </div>
+                          <div className="pred-bar-labels">
+                            <span>과매도 &lt;30</span>
+                            <span>과매수 &gt;70</span>
+                          </div>
+                        </div>
+                      )}
+                      {/* ARIMA 잔차 */}
+                      {arima != null && (
+                        <div className="pred-stat-row">
+                          <span className="pred-stat-label">ARIMA 잔차</span>
+                          <span className={`pred-stat-val ${arima > 0 ? 'bullish' : 'bearish'}`}>
+                            {arima > 0 ? '+' : ''}{arima.toFixed(4)}
+                          </span>
+                          <span className="pred-stat-note">{arima > 0 ? '상승 압력' : '하락 압력'}</span>
+                        </div>
+                      )}
+                    </div>
                   );
                 })() : (
                   <div className="chart-no-data-msg">단기 예측 데이터 없음</div>
                 )}
               </div>
-              {!modelPrediction.loading && (
-                <div className="chart-pred-summary">
-                  {modelPrediction.short ? (
-                    <>
-                      <span className={`chart-pred-dir ${modelShortDir === 'up' ? 'bullish' : 'bearish'}`}>
-                        {modelPrediction.short.direction_label || (modelShortDir === 'up' ? '상승' : '하락')}
-                      </span>
-                      <span className="chart-pred-sep">·</span>
-                      <span>상승확률 <strong>{(modelShortProb * 100).toFixed(1)}%</strong></span>
-                      <span className="chart-pred-sep">·</span>
-                      <span className="chart-pred-date">{modelPrediction.short.prediction_for_date?.slice(0, 10)} 기준</span>
-                    </>
-                  ) : (
-                    <span className="chart-pred-empty">단기 예측 데이터 없음</span>
-                  )}
-                </div>
-              )}
 
               {/* 중장기 예측 */}
-              <div className="chart-section-label" style={{ marginTop: "16px" }}>
-                <span className="chart-section-tag">중장기 · 20일 후 예측 · XGBoost</span>
-              </div>
-              <div className="chart-placeholder-inner">
+              <div className="pred-block">
+                <div className="pred-block-header">
+                  <span className="pred-block-title">중장기 예측</span>
+                  <span className="pred-block-meta">20일 후 · XGBoost</span>
+                </div>
                 {modelPrediction.loading ? (
                   <div className="chart-no-data-msg">예측 데이터 로딩 중...</div>
                 ) : modelPrediction.mid ? (() => {
                   const prob = modelPrediction.mid.probability_up ?? 0.5;
                   const pct = Math.round(prob * 100);
                   const isUp = prob >= 0.5;
-                  const barColor = isUp ? "#16a34a" : "#dc2626";
                   const dxy = modelPrediction.short?.base_features?.dxy_logret_5d;
                   const shortProb = modelPrediction.short?.probability_up;
+                  const shortPct = shortProb != null ? Math.round(shortProb * 100) : null;
+                  const dir = modelPrediction.mid.direction_label || (isUp ? '상승' : '하락');
                   return (
-                    <svg viewBox="0 0 400 110" className="placeholder-chart-svg" preserveAspectRatio="none">
-                      <text x="8" y="16" fontSize="10" fill="#9e9a94">중장기 상승확률 (20일)</text>
-                      <rect x="8" y="22" width="384" height="14" rx="4" fill="#e8e4df"/>
-                      <rect x="8" y="22" width={384 * prob} height="14" rx="4" fill={barColor} opacity="0.85"/>
-                      <text x={8 + 384 * prob + (isUp ? 4 : -28)} y="33" fontSize="10" fill={barColor} fontWeight="600">{pct}%</text>
-                      {shortProb != null && (<>
-                        <text x="8" y="54" fontSize="10" fill="#9e9a94">단기 vs 중장기 비교</text>
-                        <rect x="8" y="60" width="180" height="10" rx="3" fill="#e8e4df"/>
-                        <rect x="8" y="60" width={180 * shortProb} height="10" rx="3" fill={shortProb >= 0.5 ? "#16a34a" : "#dc2626"} opacity="0.7"/>
-                        <text x="8" y="82" fontSize="9" fill="#9e9a94">단기 {Math.round(shortProb*100)}%</text>
-                        <rect x="210" y="60" width="182" height="10" rx="3" fill="#e8e4df"/>
-                        <rect x="210" y="60" width={182 * prob} height="10" rx="3" fill={barColor} opacity="0.7"/>
-                        <text x="210" y="82" fontSize="9" fill="#9e9a94">중장기 {pct}%</text>
-                      </>)}
-                      {dxy != null && (
-                        <text x="8" y="96" fontSize="10" fill="#9e9a94">
-                          DXY 5일 수익률  <tspan fill={dxy > 0 ? "#dc2626" : "#16a34a"} fontWeight="600">{dxy > 0 ? "+" : ""}{(dxy * 100).toFixed(4)}%</tspan>
-                          <tspan fill="#9e9a94"> (달러 {dxy > 0 ? "강세→커피 하락압력" : "약세→커피 상승압력"})</tspan>
-                        </text>
+                    <div className="pred-body">
+                      {/* 방향 + 확률 히어로 */}
+                      <div className="pred-hero">
+                        <span className={`pred-direction ${isUp ? 'bullish' : 'bearish'}`}>{dir}</span>
+                        <span className={`pred-prob ${isUp ? 'bullish' : 'bearish'}`}>{pct}%</span>
+                        {modelPrediction.mid.prediction_for_date && (
+                          <span className="pred-date">{modelPrediction.mid.prediction_for_date.slice(0,10)} 기준</span>
+                        )}
+                      </div>
+                      {/* 중장기 상승확률 바 */}
+                      <div className="pred-metric">
+                        <div className="pred-metric-label">
+                          <span>상승확률 <span className="pred-metric-sub">20일</span></span>
+                          <span className={isUp ? 'bullish' : 'bearish'}>{pct}%</span>
+                        </div>
+                        <div className="pred-bar-track">
+                          <div className={`pred-bar-fill ${isUp ? 'bullish' : 'bearish'}`} style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                      {/* 단기 vs 중장기 비교 */}
+                      {shortPct != null && (
+                        <div className="pred-compare">
+                          <span className="pred-metric-label-only">단기 vs 중장기</span>
+                          <div className="pred-compare-bars">
+                            <div className="pred-compare-item">
+                              <div className="pred-bar-track">
+                                <div className={`pred-bar-fill ${shortProb >= 0.5 ? 'bullish' : 'bearish'}`}
+                                  style={{ width: `${shortPct}%`, opacity: 0.7 }} />
+                              </div>
+                              <span className="pred-compare-label">단기 {shortPct}%</span>
+                            </div>
+                            <div className="pred-compare-item">
+                              <div className="pred-bar-track">
+                                <div className={`pred-bar-fill ${isUp ? 'bullish' : 'bearish'}`}
+                                  style={{ width: `${pct}%`, opacity: 0.7 }} />
+                              </div>
+                              <span className="pred-compare-label">중장기 {pct}%</span>
+                            </div>
+                          </div>
+                        </div>
                       )}
-                    </svg>
+                      {/* DXY */}
+                      {dxy != null && (
+                        <div className="pred-stat-row">
+                          <span className="pred-stat-label">DXY 5일 수익률</span>
+                          <span className={`pred-stat-val ${dxy > 0 ? 'bearish' : 'bullish'}`}>
+                            {dxy > 0 ? '+' : ''}{(dxy * 100).toFixed(4)}%
+                          </span>
+                          <span className="pred-stat-note">{dxy > 0 ? '달러 강세 → 하락압력' : '달러 약세 → 상승압력'}</span>
+                        </div>
+                      )}
+                    </div>
                   );
                 })() : (
                   <div className="chart-no-data-msg">중장기 예측 데이터 없음</div>
                 )}
               </div>
-              {!modelPrediction.loading && (
-                <div className="chart-pred-summary">
-                  {modelPrediction.mid ? (
-                    <>
-                      <span className={`chart-pred-dir ${modelMidDir === 'up' ? 'bullish' : 'bearish'}`}>
-                        {modelPrediction.mid.direction_label || (modelMidDir === 'up' ? '상승' : '하락')}
-                      </span>
-                      <span className="chart-pred-sep">·</span>
-                      <span>상승확률 <strong>{(modelPrediction.mid.probability_up * 100).toFixed(1)}%</strong></span>
-                      <span className="chart-pred-sep">·</span>
-                      <span className="chart-pred-date">{modelPrediction.mid.prediction_for_date?.slice(0, 10)} 기준</span>
-                    </>
-                  ) : (
-                    <span className="chart-pred-empty">중장기 예측 데이터 없음</span>
-                  )}
-                </div>
-              )}
 
               <div style={{ marginTop: "16px" }}>
                 <PurchaseMatrix shortDir={modelShortDir} midDir={modelMidDir} />
@@ -893,4 +921,4 @@ export default function App() {
       {selectedNews && <NewsModal item={selectedNews} onClose={() => setSelectedNews(null)} />}
     </div>
   );
-} 
+}
