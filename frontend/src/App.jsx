@@ -266,9 +266,6 @@ export default function App() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [now, setNow] = useState(new Date());
 
-  // 차트 탭 상태
-  const [chartTab, setChartTab] = useState("short"); // "short" | "mid"
-
   // 모델 예측 데이터
   const [modelPrediction, setModelPrediction] = useState({ short: null, mid: null, loading: true, error: null });
 
@@ -681,155 +678,85 @@ export default function App() {
             </div>
           </div>
 
-          <div className="col-right">
-            {/* 가격 추이 + 모델 예측 */}
+
             <div className="section-card chart-card">
               <div className="section-header">
-                <span className="section-title">가격 추이 + 모델 예측</span>
-                <div className="chart-tabs">
-                  <button className={`chart-tab${chartTab === "short" ? " active" : ""}`} onClick={() => setChartTab("short")}>단기</button>
-                  <button className={`chart-tab${chartTab === "mid" ? " active" : ""}`} onClick={() => setChartTab("mid")}>중장기</button>
-                </div>
+                <span className="section-title">모델 예측</span>
+                <span className="chart-meta-tag">ARIMA+XGB</span>
               </div>
 
-              {chartTab === "short" ? (
-                <>
-                  <div className="chart-placeholder-inner">
-                    {modelPrediction.loading ? (
-                      <div className="chart-no-data-msg">예측 데이터 로딩 중...</div>
-                    ) : modelPrediction.short ? (() => {
-                      const prob = modelPrediction.short.probability_up ?? 0.5;
-                      const pct = Math.round(prob * 100);
-                      const isUp = prob >= 0.5;
-                      const barColor = isUp ? "#16a34a" : "#dc2626";
-                      const rsi = modelPrediction.short?.base_features?.coffee_rsi_14;
-                      const rsiPct = rsi != null ? Math.min(Math.max(rsi, 0), 100) : null;
-                      const arima = modelPrediction.short?.arima_features?.arima_resid_1d;
+              {modelPrediction.loading ? (
+                <div className="chart-no-data-msg">예측 데이터 로딩 중...</div>
+              ) : (!modelPrediction.short && !modelPrediction.mid) ? (
+                <div className="chart-no-data-msg">예측 데이터 없음</div>
+              ) : (() => {
+                const s = modelPrediction.short;
+                const m = modelPrediction.mid;
+                const shortProb = s?.probability_up ?? null;
+                const midProb   = m?.probability_up ?? null;
+                const rsi       = s?.base_features?.coffee_rsi_14 ?? null;
+                const arima     = s?.arima_features?.arima_resid_1d ?? null;
+                const dxy       = s?.base_features?.dxy_logret_5d ?? null;
+
+                const clr = (p) => p >= 0.5 ? "#1d7a4e" : "#c0392b";
+                const BX = 8, BW = 384, RH = 32;
+
+                const rows = [];
+                if (shortProb != null) rows.push({ key: "short", label: "단기 상승확률 (1일)",    prob: shortProb, note: s?.direction_label ?? null });
+                if (midProb   != null) rows.push({ key: "mid",   label: "중장기 상승확률 (20일)", prob: midProb,   note: m?.direction_label ?? null });
+                if (rsi       != null) rows.push({ key: "rsi",   label: "RSI (14일)",            prob: rsi / 100, value: rsi.toFixed(1), isRsi: true });
+                if (arima     != null) rows.push({ key: "arima", label: "ARIMA 잔차 (1일)",       value: `${arima > 0 ? "+" : ""}${arima.toFixed(4)}`, sign: arima > 0 ? 1 : -1 });
+                if (dxy       != null) rows.push({ key: "dxy",   label: "DXY 5일 수익률",         value: `${dxy > 0 ? "+" : ""}${(dxy * 100).toFixed(4)}%`, sign: dxy > 0 ? 1 : -1 });
+
+                const svgH = rows.length * RH + 4;
+
+                return (
+                  <svg viewBox={`0 0 400 ${svgH}`} width="100%" style={{ display: "block" }}>
+                    {rows.map((row, i) => {
+                      const ty = i * RH + 4;
+                      const labelY = ty + 10;
+                      const barY   = ty + 15;
+
+                      if (row.prob != null) {
+                        const fillClr = row.isRsi
+                          ? (row.prob * 100 < 30 ? "#1d7a4e" : row.prob * 100 > 70 ? "#c0392b" : "#9e9a94")
+                          : clr(row.prob);
+                        const filled = BW * row.prob;
+                        const valText = row.value ?? `${Math.round(row.prob * 100)}%`;
+                        const rightLabel = row.note ? `${row.note}  ${Math.round(row.prob * 100)}%` : valText;
+                        return (
+                          <g key={row.key}>
+                            <text x={BX} y={labelY} fontSize="9" fill="#9e9a94" fontFamily="monospace">{row.label}</text>
+                            <text x={BX + BW} y={labelY} fontSize="9" fill={fillClr} fontWeight="600" textAnchor="end" fontFamily="monospace">{rightLabel}</text>
+                            <rect x={BX} y={barY} width={BW} height="7" rx="3.5" fill="#e8e4df"/>
+                            {row.isRsi && <>
+                              <rect x={BX} y={barY} width={BW * 0.3} height="7" rx="3.5" fill="#1d7a4e" opacity="0.12"/>
+                              <rect x={BX + BW * 0.7} y={barY} width={BW * 0.3} height="7" rx="3.5" fill="#c0392b" opacity="0.12"/>
+                            </>}
+                            <rect x={BX} y={barY} width={filled} height="7" rx="3.5" fill={fillClr} opacity={row.isRsi ? 0 : 0.85}/>
+                            {row.isRsi && <rect x={BX + filled - 1.5} y={barY - 1} width="3" height="9" rx="1.5" fill={fillClr}/>}
+                            {!row.isRsi && <line x1={BX + BW/2} y1={barY - 1} x2={BX + BW/2} y2={barY + 8} stroke="#c8c3bc" strokeWidth="1" strokeDasharray="2,2"/>}
+                          </g>
+                        );
+                      }
+
+                      const signClr = row.sign > 0 ? "#1d7a4e" : "#c0392b";
                       return (
-                        <svg viewBox="0 0 400 110" className="placeholder-chart-svg" preserveAspectRatio="none">
-                          <defs>
-                            <linearGradient id="barGradUp" x1="0%" y1="0%" x2="100%" y2="0%">
-                              <stop offset="0%" stopColor="#16a34a" stopOpacity="0.7"/>
-                              <stop offset="100%" stopColor="#16a34a" stopOpacity="1"/>
-                            </linearGradient>
-                            <linearGradient id="barGradDown" x1="0%" y1="0%" x2="100%" y2="0%">
-                              <stop offset="0%" stopColor="#dc2626" stopOpacity="0.7"/>
-                              <stop offset="100%" stopColor="#dc2626" stopOpacity="1"/>
-                            </linearGradient>
-                          </defs>
-
-                          {/* 상승확률 바 */}
-                          <text x="8" y="13" fontSize="9" fill="#9e9a94" letterSpacing="0.04em" fontFamily="monospace">상승확률</text>
-                          <text x="392" y="13" fontSize="11" fill={barColor} fontWeight="700" textAnchor="end" fontFamily="monospace">{pct}%</text>
-                          <rect x="8" y="18" width="384" height="16" rx="8" fill="#e8e4df"/>
-                          <rect x="8" y="18" width={384 * prob} height="16" rx="8" fill={isUp ? "url(#barGradUp)" : "url(#barGradDown)"}/>
-                          {/* 50% 기준선 */}
-                          <line x1={8 + 192} y1="16" x2={8 + 192} y2="36" stroke="#c0b9b0" strokeWidth="1" strokeDasharray="2,2"/>
-
-                          {/* RSI 바 */}
-                          {rsiPct != null && (<>
-                            <text x="8" y="52" fontSize="9" fill="#9e9a94" letterSpacing="0.04em" fontFamily="monospace">RSI (14일)</text>
-                            <text x="392" y="52" fontSize="11" fill={rsiPct < 30 ? "#16a34a" : rsiPct > 70 ? "#dc2626" : "#4a3728"} fontWeight="700" textAnchor="end" fontFamily="monospace">{rsi.toFixed(1)}</text>
-                            <rect x="8" y="57" width="384" height="10" rx="5" fill="#e8e4df"/>
-                            <rect x="8" y="57" width={384 * 0.3} height="10" rx="5" fill="#16a34a" opacity="0.15"/>
-                            <rect x={8 + 384 * 0.7} y="57" width={384 * 0.3} height="10" rx="5" fill="#dc2626" opacity="0.15"/>
-                            <circle cx={8 + 384 * (rsiPct / 100)} cy="62" r="7" fill={rsiPct < 30 ? "#16a34a" : rsiPct > 70 ? "#dc2626" : "#4a3728"} stroke="white" strokeWidth="1.5"/>
-                            <text x="8" y="80" fontSize="8.5" fill="#9e9a94" fontFamily="monospace">과매도 ←</text>
-                            <text x="392" y="80" fontSize="8.5" fill="#9e9a94" textAnchor="end" fontFamily="monospace">→ 과매수</text>
-                          </>)}
-
-                          {/* ARIMA 잔차 */}
-                          {arima != null && (<>
-                            <rect x="8" y="88" width="384" height="18" rx="5" fill={arima > 0 ? "rgba(22,163,74,0.07)" : "rgba(220,38,38,0.07)"} stroke={arima > 0 ? "rgba(22,163,74,0.2)" : "rgba(220,38,38,0.2)"} strokeWidth="1"/>
-                            <text x="16" y="100" fontSize="9" fill="#9e9a94" fontFamily="monospace">ARIMA 잔차</text>
-                            <text x="392" y="100" fontSize="9.5" fill={arima > 0 ? "#16a34a" : "#dc2626"} fontWeight="600" textAnchor="end" fontFamily="monospace">{arima > 0 ? "+" : ""}{arima.toFixed(4)}  {arima > 0 ? "↑ 상승 압력" : "↓ 하락 압력"}</text>
-                          </>)}
-                        </svg>
+                        <g key={row.key}>
+                          <text x={BX} y={labelY} fontSize="9" fill="#9e9a94" fontFamily="monospace">{row.label}</text>
+                          <text x={BX + BW} y={labelY} fontSize="9" fill={signClr} fontWeight="600" textAnchor="end" fontFamily="monospace">{row.value}</text>
+                          <line x1={BX} y1={barY + 4} x2={BX + BW} y2={barY + 4} stroke="#ede9e3" strokeWidth="1"/>
+                        </g>
                       );
-                    })() : (
-                      <div className="chart-no-data-msg">단기 예측 데이터 없음</div>
-                    )}
-                  </div>
-                  <div className="chart-meta-row">
-                    <span className="chart-meta-tag">1일 후 예측 · ARIMA+XGB</span>
-                  </div>
-
-                </>
-              ) : (
-                <>
-                  <div className="chart-placeholder-inner">
-                    {modelPrediction.loading ? (
-                      <div className="chart-no-data-msg">예측 데이터 로딩 중...</div>
-                    ) : modelPrediction.mid ? (() => {
-                      const prob = modelPrediction.mid.probability_up ?? 0.5;
-                      const pct = Math.round(prob * 100);
-                      const isUp = prob >= 0.5;
-                      const barColor = isUp ? "#16a34a" : "#dc2626";
-                      const dxy = modelPrediction.short?.base_features?.dxy_logret_5d;
-                      const shortProb = modelPrediction.short?.probability_up;
-                      return (
-                        <svg viewBox="0 0 400 110" className="placeholder-chart-svg" preserveAspectRatio="none">
-                          <defs>
-                            <linearGradient id="midGradUp" x1="0%" y1="0%" x2="100%" y2="0%">
-                              <stop offset="0%" stopColor="#16a34a" stopOpacity="0.7"/>
-                              <stop offset="100%" stopColor="#16a34a" stopOpacity="1"/>
-                            </linearGradient>
-                            <linearGradient id="midGradDown" x1="0%" y1="0%" x2="100%" y2="0%">
-                              <stop offset="0%" stopColor="#dc2626" stopOpacity="0.7"/>
-                              <stop offset="100%" stopColor="#dc2626" stopOpacity="1"/>
-                            </linearGradient>
-                          </defs>
-
-                          {/* 중장기 상승확률 바 */}
-                          <text x="8" y="13" fontSize="9" fill="#9e9a94" letterSpacing="0.04em" fontFamily="monospace">중장기 상승확률 (20일)</text>
-                          <text x="392" y="13" fontSize="11" fill={barColor} fontWeight="700" textAnchor="end" fontFamily="monospace">{pct}%</text>
-                          <rect x="8" y="18" width="384" height="16" rx="8" fill="#e8e4df"/>
-                          <rect x="8" y="18" width={384 * prob} height="16" rx="8" fill={isUp ? "url(#midGradUp)" : "url(#midGradDown)"}/>
-                          <line x1={8 + 192} y1="16" x2={8 + 192} y2="36" stroke="#c0b9b0" strokeWidth="1" strokeDasharray="2,2"/>
-
-                          {/* 단기 vs 중장기 비교 */}
-                          {shortProb != null && (<>
-                            <text x="8" y="52" fontSize="9" fill="#9e9a94" letterSpacing="0.04em" fontFamily="monospace">단기 vs 중장기 비교</text>
-                            {/* 단기 */}
-                            <rect x="8" y="57" width="182" height="10" rx="5" fill="#e8e4df"/>
-                            <rect x="8" y="57" width={182 * shortProb} height="10" rx="5" fill={shortProb >= 0.5 ? "#16a34a" : "#dc2626"} opacity="0.8"/>
-                            <text x="8" y="79" fontSize="8.5" fill="#9e9a94" fontFamily="monospace">단기 {Math.round(shortProb*100)}%</text>
-                            {/* 중장기 */}
-                            <rect x="210" y="57" width="182" height="10" rx="5" fill="#e8e4df"/>
-                            <rect x="210" y="57" width={182 * prob} height="10" rx="5" fill={barColor} opacity="0.8"/>
-                            <text x="210" y="79" fontSize="8.5" fill="#9e9a94" fontFamily="monospace">중장기 {pct}%</text>
-                          </>)}
-
-                          {/* DXY */}
-                          {dxy != null && (
-                            <rect x="8" y="88" width="384" height="18" rx="5" fill={dxy > 0 ? "rgba(220,38,38,0.07)" : "rgba(22,163,74,0.07)"} stroke={dxy > 0 ? "rgba(220,38,38,0.2)" : "rgba(22,163,74,0.2)"} strokeWidth="1"/>
-                          )}
-                          {dxy != null && (
-                            <text x="16" y="100" fontSize="9" fill="#9e9a94" fontFamily="monospace">
-                              DXY 5일 수익률
-                            </text>
-                          )}
-                          {dxy != null && (
-                            <text x="392" y="100" fontSize="9.5" fill={dxy > 0 ? "#dc2626" : "#16a34a"} fontWeight="600" textAnchor="end" fontFamily="monospace">
-                              {dxy > 0 ? "+" : ""}{(dxy * 100).toFixed(4)}%  {dxy > 0 ? "↑ 달러강세 → 커피↓" : "↓ 달러약세 → 커피↑"}
-                            </text>
-                          )}
-                        </svg>
-                      );
-                    })() : (
-                      <div className="chart-no-data-msg">중장기 예측 데이터 없음</div>
-                    )}
-                  </div>
-                  <div className="chart-meta-row">
-                    <span className="chart-meta-tag">20일 후 예측 · XGBoost</span>
-                  </div>
-
-                </>
-              )}
+                    })}
+                  </svg>
+                );
+              })()}
 
               <div style={{ marginTop: "12px" }}>
                 <PurchaseMatrix shortDir={modelShortDir} midDir={modelMidDir} />
               </div>
+            </div>
             </div>
 
             {/* 감성 트렌드 */}
