@@ -806,3 +806,18 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+
+/* ---- BRIEFING FEATURE TAGS WITH COLOR ---- */
+.feature-tag-colored { border: 1px solid var(--border); }
+.feature-tag-colored.bullish {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #16a34a;
+}
+.feature-tag-colored.bullish em { background: rgba(34, 197, 94, 0.15); color: #15803d; }
+.feature-tag-colored.bearish {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #dc2626;
+}
+.feature-tag-colored.bearish em { background: rgba(239, 68, 68, 0.15); color: #b91c1c; }

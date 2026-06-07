@@ -591,14 +591,14 @@ export default function App() {
                   </div>
                   <div className="briefing-features">
                     {[
-                      { label: "ICE 선물가", val: market?.arabica_close?.toFixed(2) ? `${market.arabica_close.toFixed(2)}¢` : "–" },
-                      { label: "USD/KRW", val: market ? `${Math.round(market.usdkrw).toLocaleString()}₩` : "–" },
-                      { label: "RSI(14)", val: modelPrediction.short?.base_features?.coffee_rsi_14?.toFixed(1) ?? "–" },
-                      { label: "ARIMA 잔차", val: modelPrediction.short?.arima_features?.arima_resid_1d?.toFixed(4) ?? "–" },
-                      { label: "XGBoost", val: modelPrediction.short ? `${(modelPrediction.short.probability_up * 100).toFixed(1)}%` : "–" },
-                      { label: "뉴스 감성", val: avgSent ? `${(avgSent * 100).toFixed(0)}` : "–" },
+                      { label: "ICE 선물가", val: market?.arabica_close?.toFixed(2) ? `${market.arabica_close.toFixed(2)}¢` : "–", cls: market?.arabica_pct_change > 0 ? "bullish" : market?.arabica_pct_change < 0 ? "bearish" : "" },
+                      { label: "USD/KRW", val: market ? `${Math.round(market.usdkrw).toLocaleString()}₩` : "–", cls: market?.usdkrw >= 1400 ? "bearish" : "" },
+                      { label: "RSI(14)", val: modelPrediction.short?.base_features?.coffee_rsi_14?.toFixed(1) ?? "–", cls: (() => { const r = modelPrediction.short?.base_features?.coffee_rsi_14; return r < 30 ? "bullish" : r > 70 ? "bearish" : ""; })() },
+                      { label: "ARIMA 잔차", val: modelPrediction.short?.arima_features?.arima_resid_1d?.toFixed(4) ?? "–", cls: modelPrediction.short?.arima_features?.arima_resid_1d > 0 ? "bullish" : modelPrediction.short?.arima_features?.arima_resid_1d < 0 ? "bearish" : "" },
+                      { label: "XGBoost", val: modelPrediction.short ? `${(modelPrediction.short.probability_up * 100).toFixed(1)}%` : "–", cls: modelShortDir === "up" ? "bullish" : modelShortDir === "down" ? "bearish" : "" },
+                      { label: "뉴스 감성", val: avgSent ? `${(avgSent * 100).toFixed(0)}` : "–", cls: sig.cls },
                     ].map(f => (
-                      <span key={f.label} className="feature-tag">{f.label} <em>{f.val}</em></span>
+                      <span key={f.label} className={`feature-tag feature-tag-colored ${f.cls}`}>{f.label} <em>{f.val}</em></span>
                     ))}
                   </div>
                 </div>
@@ -725,7 +725,7 @@ export default function App() {
                   <div className="chart-meta-row">
                     <span className="chart-meta-item"><span className="chart-legend-dot real"/>실제가</span>
                     <span className="chart-meta-item"><span className="chart-legend-dash"/>단기 예측</span>
-                    <span className="chart-meta-tag">horizon: 1~5일 · ARIMA+XGB</span>
+                    <span className="chart-meta-tag">1일 후 예측 · ARIMA+XGB</span>
                   </div>
                 </>
               ) : (
@@ -758,7 +758,7 @@ export default function App() {
                     <span className="chart-meta-item"><span className="chart-legend-dot real"/>실제가</span>
                     <span className="chart-meta-item"><span className="chart-legend-dash"/>중장기 예측</span>
                     <span className="chart-meta-item"><span className="chart-legend-band"/>예측 범위</span>
-                    <span className="chart-meta-tag">horizon: 14일+ · 앙상블</span>
+                    <span className="chart-meta-tag">20일 후 예측 · XGBoost</span>
                   </div>
                 </>
               )}
@@ -841,7 +841,7 @@ export default function App() {
                   ))}
                 </tbody>
               </table>
-              <p className="feature-model-note">* 뉴스 감성 점수는 뉴스 API 기준</p>
+
             </div>
           </div>
         </div>
