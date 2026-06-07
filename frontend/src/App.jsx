@@ -358,6 +358,70 @@ export default function App() {
   const avgSent = signal?.avg_sentiment;
   const todayCount = todayNews.length;
 
+  // AI 브리핑 state
+  const [briefing, setBriefing] = useState({ text: null, loading: false, error: null, generatedAt: null });
+
+  const generateBriefing = useCallback(async () => {
+    // 데이터가 충분히 로드됐는지 확인
+    if (!market && !modelPrediction.short && !signal) return;
+    setBriefing(prev => ({ ...prev, loading: true, error: null }));
+
+    const features = {
+      icePrice: market?.arabica_close?.toFixed(2) ?? "–",
+      usdkrw: market ? Math.round(market.usdkrw).toLocaleString() : "–",
+      rsi: modelPrediction.short?.base_features?.coffee_rsi_14?.toFixed(1) ?? "–",
+      arimaResid: modelPrediction.short?.arima_features?.arima_resid_1d?.toFixed(4) ?? "–",
+      xgbProb: modelPrediction.short ? `${(modelPrediction.short.probability_up * 100).toFixed(1)}%` : "–",
+      xgbDir: modelPrediction.short?.direction === 1 ? "상승" : modelPrediction.short?.direction === -1 ? "하락" : "–",
+      sentiment: avgSent ? `${(avgSent * 100).toFixed(1)}` : "–",
+      sentimentLabel: sig.label,
+      newsCount: todayCount,
+      tradeDate: market?.trade_date ?? "최신",
+    };
+
+    const prompt = `당신은 커피 생두 시장 전문 애널리스트입니다. 아래 실시간 데이터를 바탕으로 오늘의 생두 시장 브리핑을 한국어로 작성하세요.
+
+[현재 데이터]
+- ICE 아라비카 선물가: ${features.icePrice} ¢/lb (${features.tradeDate} 기준)
+- USD/KRW 환율: ${features.usdkrw} 원
+- RSI (14일): ${features.rsi}
+- ARIMA 잔차 (1일): ${features.arimaResid}
+- XGBoost 단기 예측: ${features.xgbProb} (${features.xgbDir})
+- 뉴스 감성 점수: ${features.sentiment} / 100 (${features.sentimentLabel})
+- 오늘 수집 뉴스: ${features.newsCount}건
+
+[작성 지침]
+- 3~4문장 이내로 간결하게 작성
+- 현재 시장 상황 요약 → 주요 리스크/기회 → 매입 시사점 순서
+- 숫자 데이터를 반드시 인용
+- 전문적이지만 실무자가 바로 활용할 수 있는 톤`;
+
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          messages: [{ role: "user", content: prompt }],
+        }),
+      });
+      const data = await res.json();
+      const text = data.content?.map(b => b.text || "").join("") ?? "";
+      setBriefing({ text, loading: false, error: null, generatedAt: new Date() });
+    } catch (e) {
+      setBriefing({ text: null, loading: false, error: e.message, generatedAt: null });
+    }
+  }, [market, modelPrediction, signal, avgSent, sig, todayCount]);
+
+  // 데이터가 어느 정도 로드되면 자동 브리핑 생성
+  useEffect(() => {
+    const ready = market !== null && !modelPrediction.loading && !loading.signal;
+    if (ready && !briefing.text && !briefing.loading) {
+      generateBriefing();
+    }
+  }, [market, modelPrediction.loading, loading.signal]);
+
   const nowStr = now.toLocaleString("ko-KR", {
     year: "numeric", month: "2-digit", day: "2-digit",
     hour: "2-digit", minute: "2-digit", hour12: false,
@@ -378,22 +442,34 @@ export default function App() {
 
       <main className="main">
         <section className="kpi-row">
-          <div className="kpi-card kpi-model">
+          <div className="kpi-card kpi-live">
             <span className="kpi-label">ICE 아라비카</span>
             <div className="kpi-value-row">
-              <span className="kpi-value">–</span>
+              {market ? (
+                <span className="kpi-value">{market.arabica_close.toFixed(2)}</span>
+              ) : (
+                <span className="kpi-loading">로딩중...</span>
+              )}
               <span className="kpi-unit">¢/lb</span>
             </div>
-            <span className="kpi-note kpi-model-note">모델 API 연동 예정</span>
+            <span className="kpi-note">
+              {market ? `${market.trade_date || "최신"} 기준` : "시장 데이터 로딩중"}
+            </span>
           </div>
 
-          <div className="kpi-card kpi-model">
+          <div className="kpi-card kpi-live">
             <span className="kpi-label">USD/KRW</span>
             <div className="kpi-value-row">
-              <span className="kpi-value">–</span>
+              {market ? (
+                <span className="kpi-value">{Math.round(market.usdkrw).toLocaleString()}</span>
+              ) : (
+                <span className="kpi-loading">로딩중...</span>
+              )}
               <span className="kpi-unit">원</span>
             </div>
-            <span className="kpi-note kpi-model-note">모델 API 연동 예정</span>
+            <span className="kpi-note">
+              {market ? `${market.trade_date || "최신"} 기준` : "시장 데이터 로딩중"}
+            </span>
           </div>
 
           <div className={`kpi-card kpi-live ${modelShortDir === 'up' ? 'bullish' : modelShortDir === 'down' ? 'bearish' : ''}`}>
@@ -437,36 +513,60 @@ export default function App() {
 
         <div className="grid-main">
           <div className="col-left">
-            {/* AI 브리핑 placeholder */}
+            {/* AI 브리핑 */}
             <div className="section-card briefing-card">
               <div className="section-header">
                 <span className="section-title">AI 데일리 브리핑</span>
                 <span className="badge-llm">LLM 생성</span>
-                <span className="section-note">브리핑 API 연동 예정</span>
+                {briefing.generatedAt && (
+                  <span className="section-note">
+                    {briefing.generatedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })} 생성
+                  </span>
+                )}
+                <button
+                  className="briefing-refresh-btn"
+                  onClick={generateBriefing}
+                  disabled={briefing.loading}
+                  title="브리핑 재생성"
+                >
+                  {briefing.loading ? "생성중..." : "↻ 재생성"}
+                </button>
               </div>
-              <div className="briefing-placeholder">
-                <div className="placeholder-line w-full" />
-                <div className="placeholder-line w-3/4" />
-                <div className="briefing-placeholder-item">
-                  <div className="placeholder-dot" />
-                  <div style={{ flex: 1 }}>
-                    <div className="placeholder-line w-full" />
-                    <div className="placeholder-line w-2/3" />
+
+              {briefing.loading ? (
+                <div className="briefing-generating">
+                  <div className="spinner" />
+                  <span>AI가 시장 데이터를 분석하고 있습니다...</span>
+                </div>
+              ) : briefing.error ? (
+                <div className="error-state small">브리핑 생성 실패: {briefing.error}</div>
+              ) : briefing.text ? (
+                <div className="briefing-content">
+                  <p className="briefing-text">{briefing.text}</p>
+                  <div className="briefing-features">
+                    {[
+                      { label: "ICE 선물가", val: market?.arabica_close?.toFixed(2) ? `${market.arabica_close.toFixed(2)}¢` : "–" },
+                      { label: "USD/KRW", val: market ? `${Math.round(market.usdkrw).toLocaleString()}₩` : "–" },
+                      { label: "RSI(14)", val: modelPrediction.short?.base_features?.coffee_rsi_14?.toFixed(1) ?? "–" },
+                      { label: "ARIMA 잔차", val: modelPrediction.short?.arima_features?.arima_resid_1d?.toFixed(4) ?? "–" },
+                      { label: "XGBoost", val: modelPrediction.short ? `${(modelPrediction.short.probability_up * 100).toFixed(1)}%` : "–" },
+                      { label: "뉴스 감성", val: avgSent ? `${(avgSent * 100).toFixed(0)}` : "–" },
+                    ].map(f => (
+                      <span key={f.label} className="feature-tag">{f.label} <em>{f.val}</em></span>
+                    ))}
                   </div>
                 </div>
-                <div className="briefing-placeholder-item">
-                  <div className="placeholder-dot" />
-                  <div style={{ flex: 1 }}>
-                    <div className="placeholder-line w-full" />
-                    <div className="placeholder-line w-1/2" />
+              ) : (
+                <div className="briefing-placeholder">
+                  <div className="placeholder-line w-full" />
+                  <div className="placeholder-line w-3/4" />
+                  <div className="briefing-features">
+                    {["ICE 선물가","USD/KRW","RSI(14)","ARIMA 잔차","XGBoost 확률","뉴스 감성"].map(f => (
+                      <span key={f} className="feature-tag">{f}</span>
+                    ))}
                   </div>
                 </div>
-                <div className="briefing-features">
-                  {["ICE 선물가","USD/KRW","RSI(14)","ARIMA 잔차","XGBoost 확률","뉴스 감성"].map(f => (
-                    <span key={f} className="feature-tag">{f}</span>
-                  ))}
-                </div>
-              </div>
+              )}
             </div>
 
             <SearchBar onSearch={handleSearch} />

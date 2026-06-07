@@ -732,3 +732,53 @@ body {
   .logo-sub { display: none; }
   .news-scroll-area { max-height: 380px; }
 }
+
+/* ---- AI BRIEFING LIVE ---- */
+.briefing-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.briefing-text {
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+}
+.briefing-generating {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.briefing-refresh-btn {
+  margin-left: auto;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.briefing-refresh-btn:hover:not(:disabled) {
+  background: var(--bg2);
+  color: var(--text-primary);
+}
+.briefing-refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.briefing-features .feature-tag em {
+  font-style: normal;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-primary);
+  background: rgba(74,55,40,0.08);
+  border-radius: 3px;
+  padding: 0 4px;
+  margin-left: 3px;
+}
