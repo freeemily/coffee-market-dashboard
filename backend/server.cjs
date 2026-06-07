@@ -1,31 +1,10 @@
 const express = require('express');
 const cors = require('cors');
-const { Pool } = require('pg');
 
 const app = express();
 
 const PORT = process.env.PORT || 3001;
 const NEWS_API_BASE = process.env.NEWS_API_BASE || 'http://34.50.27.50:8000';
-
-// PostgreSQL 연결
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT || '5432', 10),
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  ssl: { rejectUnauthorized: false },
-});
-
-// DB 연결 확인
-pool.connect((err, client, release) => {
-  if (err) {
-    console.error('[DB] 연결 실패:', err.message);
-  } else {
-    console.log('[DB] 연결 성공');
-    release();
-  }
-});
 
 app.use(cors());
 app.use(express.json());
@@ -116,35 +95,6 @@ app.get('/api/news/similar', (req, res) => {
     )}&top_k=${req.query.top_k || 3}`,
     res
   );
-});
-
-// 예측 모델 API — DB에서 최신 예측 1건 반환
-// horizon: 1 (단기) | 20 (중장기)
-app.get('/api/prediction', async (req, res) => {
-  const horizon = parseInt(req.query.horizon, 10);
-  if (horizon !== 1 && horizon !== 20) {
-    return res.status(400).json({ error: 'horizon must be 1 or 20' });
-  }
-  try {
-    const { rows } = await pool.query(
-      `SELECT
-         id, predicted_at, prediction_for_date, last_data_date,
-         horizon, direction, direction_label, probability_up,
-         arima_features, base_features, feature_importance, config
-       FROM coffee_predictions
-       WHERE horizon = $1
-       ORDER BY predicted_at DESC
-       LIMIT 1`,
-      [horizon]
-    );
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'No prediction found', horizon });
-    }
-    return res.json(rows[0]);
-  } catch (err) {
-    console.error('[prediction error]', err);
-    return res.status(500).json({ error: 'DB error', detail: err.message });
-  }
 });
 
 app.get('/health', (req, res) => {
