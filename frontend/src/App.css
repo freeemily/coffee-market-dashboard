@@ -782,3 +782,27 @@ body {
   padding: 0 4px;
   margin-left: 3px;
 }
+
+/* ---- BRIEFING TEXT ---- */
+.briefing-para {
+  margin: 0 0 10px 0;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--text-primary);
+  text-align: left;
+}
+.briefing-para:last-child { margin-bottom: 0; }
+.briefing-strategy {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.briefing-strategy strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

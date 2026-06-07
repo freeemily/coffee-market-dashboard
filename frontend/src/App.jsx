@@ -375,59 +375,71 @@ export default function App() {
     const isRsiOversold = rsi != null && rsi < 30;
     const isRsiOverbought = rsi != null && rsi > 70;
 
-    // ── 문장 1: 오늘 가격이 어제보다 어때? ──
+    // ── 문장 1: 가격 및 환율 현황 ──
     let s1 = "";
     if (icePrice) {
       if (pctChange != null) {
-        if (pctChange > 1) s1 = `오늘 커피(아라비카) 국제 가격은 어제보다 ${pctChange.toFixed(2)}% 올라 ${icePrice.toFixed(2)} 센트/lb를 기록했어요.`;
-        else if (pctChange > 0) s1 = `오늘 커피 국제 가격은 어제와 비슷한 수준인 ${icePrice.toFixed(2)} 센트/lb예요. 소폭 올랐습니다.`;
-        else if (pctChange < -1) s1 = `오늘 커피(아라비카) 국제 가격은 어제보다 ${Math.abs(pctChange).toFixed(2)}% 내려 ${icePrice.toFixed(2)} 센트/lb를 기록했어요.`;
-        else s1 = `오늘 커피 국제 가격은 어제와 거의 같은 ${icePrice.toFixed(2)} 센트/lb예요. 소폭 내렸습니다.`;
+        if (pctChange > 1) s1 = `오늘 아라비카 커피 선물 가격은 전일 대비 ${pctChange.toFixed(2)}% 상승한 ${icePrice.toFixed(2)}센트/lb를 기록했습니다.`;
+        else if (pctChange > 0) s1 = `오늘 아라비카 커피 선물 가격은 전일 대비 소폭 상승한 ${icePrice.toFixed(2)}센트/lb를 기록했습니다.`;
+        else if (pctChange < -1) s1 = `오늘 아라비카 커피 선물 가격은 전일 대비 ${Math.abs(pctChange).toFixed(2)}% 하락한 ${icePrice.toFixed(2)}센트/lb를 기록했습니다.`;
+        else s1 = `오늘 아라비카 커피 선물 가격은 전일 대비 소폭 하락한 ${icePrice.toFixed(2)}센트/lb를 기록했습니다.`;
       } else {
-        s1 = `현재 커피(아라비카) 국제 가격은 ${icePrice.toFixed(2)} 센트/lb예요.`;
+        s1 = `현재 아라비카 커피 선물 가격은 ${icePrice.toFixed(2)}센트/lb입니다.`;
       }
-      if (usdkrw) s1 += ` 달러 환율은 ${usdkrw.toLocaleString()}원으로, 환율이 높을수록 원화 매입 비용도 올라갑니다.`;
+      if (usdkrw) {
+        const krwStr = usdkrw.toLocaleString();
+        if (usdkrw >= 1400) s1 += ` 원/달러 환율은 ${krwStr}원 수준으로, 환율이 높은 상태가 유지되면서 원화 기준 수입 원가는 여전히 부담 요인으로 작용하고 있습니다.`;
+        else s1 += ` 원/달러 환율은 ${krwStr}원 수준으로, 환율 부담은 상대적으로 낮은 편입니다.`;
+      }
     } else {
-      s1 = "현재 가격 데이터를 불러오는 중이에요.";
+      s1 = "현재 가격 데이터를 불러오는 중입니다.";
     }
 
-    // ── 문장 2: 가격이 많이 떨어졌나? 올랐나? ──
+    // ── 문장 2: 가격 추세 ──
     let s2 = "";
     if (rsi != null) {
-      if (rsi < 30) s2 = `최근 가격이 꽤 많이 내려와 있는 상태예요. 지금이 바닥에 가깝다는 신호일 수 있어서, 조만간 반등할 가능성도 있습니다.`;
-      else if (rsi < 45) s2 = `가격이 최근 약세를 보이고 있어요. 아직 뚜렷한 반등 신호는 없지만, 더 크게 떨어질 가능성도 낮아지고 있는 구간이에요.`;
-      else if (rsi <= 55) s2 = `가격이 특별히 높지도 낮지도 않은 안정적인 구간이에요. 시장이 방향을 탐색하는 중으로 보입니다.`;
-      else if (rsi <= 70) s2 = `최근 가격이 꾸준히 오른 상태예요. 지금 사면 고점 매입이 될 수 있으니 타이밍을 조금 더 지켜보는 것도 좋아요.`;
-      else s2 = `가격이 단기적으로 많이 올라 있어요. 곧 조정이 올 수 있으니, 지금 대량 매입은 신중하게 판단하시길 권해요.`;
+      if (rsi < 30) s2 = `최근 커피 가격은 이전 고점 대비 상당 폭 조정을 받은 상태입니다. 가격 수준만 놓고 보면 추가 하락 여력이 제한될 수 있어 향후 반등 가능성도 함께 고려할 필요가 있습니다.`;
+      else if (rsi < 45) s2 = `가격은 최근 약세 흐름을 이어가고 있습니다. 아직 뚜렷한 반등 신호는 확인되지 않으나, 추가 하락 폭은 점차 제한될 수 있는 구간입니다.`;
+      else if (rsi <= 55) s2 = `가격은 뚜렷한 방향 없이 횡보하는 흐름입니다. 시장이 다음 방향성을 모색하는 구간으로, 추세 전환 여부를 주시할 필요가 있습니다.`;
+      else if (rsi <= 70) s2 = `가격은 최근 꾸준한 상승세를 이어온 상태입니다. 단기 과열 여부를 확인하며 매입 시점을 신중히 검토하는 것이 바람직합니다.`;
+      else s2 = `가격이 단기간에 빠르게 상승하여 과열 구간에 진입한 상태입니다. 조정 가능성을 염두에 두고 대량 매입은 신중하게 접근하시기 바랍니다.`;
     }
 
-    // ── 문장 3: 뉴스 분위기는? ──
+    // ── 문장 3: 뉴스 감성 ──
     let s3 = "";
     if (avgSent != null) {
-      const count = todayCount;
-      const countStr = count > 0 ? ` 오늘 수집된 커피 관련 뉴스 ${count}건을 분석한 결과,` : "";
-      if (isSentBullish) s3 = `${countStr} 뉴스 분위기는 전반적으로 긍정적이에요. 산지 날씨나 수급 관련 좋은 소식이 많은 편입니다.`;
-      else if (isSentBearish) s3 = `${countStr} 뉴스 분위기는 다소 부정적이에요. 공급 과잉이나 수요 둔화 관련 소식이 나오고 있어 주의가 필요합니다.`;
-      else s3 = `${countStr} 뉴스 분위기는 특별히 좋지도 나쁘지도 않은 중립적인 상태예요.`;
+      const countStr = todayCount > 0 ? `오늘 수집된 커피 관련 뉴스 ${todayCount}건을 분석한 결과, ` : "";
+      if (isSentBullish) s3 = `${countStr}시장 뉴스의 전반적인 분위기는 긍정적으로 나타났습니다. 산지 수급 또는 수요 측면에서 우호적인 요인이 부각되고 있습니다.`;
+      else if (isSentBearish) s3 = `${countStr}시장 뉴스의 전반적인 분위기는 부정적으로 나타났습니다. 공급 증가 또는 수요 둔화와 관련된 소식이 시장에 영향을 미치고 있어 주의가 필요합니다.`;
+      else s3 = `${countStr}시장 뉴스의 전반적인 분위기는 중립적으로 나타났습니다. 시장 방향성에 영향을 줄 만한 뚜렷한 호재나 악재는 확인되지 않았습니다.`;
     }
 
-    // ── 문장 4: 오늘 사야 하나? ──
-    let s4 = "";
+    // ── 문장 4: 매입 전략 ──
+    let s4label = "매입 전략";
+    let s4body = "";
     if (isRsiOversold && isModelUp && isSentBullish) {
-      s4 = "💡 오늘 매입 추천: 가격이 많이 내려왔고, 반등 신호와 긍정적인 뉴스가 겹치는 좋은 타이밍이에요. 소량씩 나눠서 매입하는 것을 추천드려요.";
+      s4label = "매입 전략: 적극 매입 검토";
+      s4body = "가격 조정, 상승 모델 신호, 긍정적 뉴스 감성이 동시에 나타나고 있습니다. 선물량 조기 확보 또는 분할 매입을 통한 적극적 대응이 유효한 시점입니다.";
     } else if (isRsiOversold && isModelUp) {
-      s4 = "💡 분할 매입 고려: 가격이 많이 내려온 상태에서 반등 신호가 나오고 있어요. 한 번에 많이 사기보다는 조금씩 나눠서 매입하는 게 안전해요.";
+      s4label = "매입 전략: 분할 매입 권장";
+      s4body = "가격이 조정된 상태에서 단기 상승 신호가 감지되고 있습니다. 한 번에 대량 매입하기보다는 분할 매입을 통해 평균 단가를 관리하는 방식이 유리합니다.";
     } else if (isModelUp && isSentBullish) {
-      s4 = "💡 적극 매입 고려: 가격 상승 신호와 긍정적인 뉴스가 모두 맞아떨어지고 있어요. 필요한 물량을 미리 확보하는 전략이 유리할 수 있어요.";
+      s4label = "매입 전략: 선매입 적극 검토";
+      s4body = "단기 모델과 뉴스 감성 모두 강세를 가리키고 있습니다. 필요 물량의 일부를 미리 확보하는 선매입 전략이 유효할 수 있습니다.";
     } else if (isModelDown && isSentBearish) {
-      s4 = "⏸️ 매입 보류 권고: 가격이 더 내려올 가능성이 있어요. 급하게 사야 하는 상황이 아니라면, 조금 더 기다렸다가 매입하는 것이 좋을 것 같아요.";
+      s4label = "매입 전략: 매입 보류 권고";
+      s4body = "단기 하락 모델 신호와 부정적 뉴스 감성이 겹치고 있습니다. 추가 하락 여지가 남아 있을 수 있어, 급하지 않다면 매입 시점을 늦추는 것이 바람직합니다.";
     } else if (isRsiOverbought && isModelDown) {
-      s4 = "⚠️ 신중한 접근 필요: 가격이 이미 많이 올라온 상태에서 하락 신호가 나오고 있어요. 지금은 대량 매입보다 관망이 유리해 보여요.";
+      s4label = "매입 전략: 관망 권고";
+      s4body = "가격이 단기 고점권에 위치한 상태에서 하락 신호가 나타나고 있습니다. 조정 이후 진입하는 방안을 검토하시기 바랍니다.";
     } else if (isModelDown) {
-      s4 = "⏸️ 잠깐 기다려 보세요: 단기적으로 가격이 조금 더 내려올 수 있다는 신호가 있어요. 급하지 않다면 며칠 더 지켜보고 결정하는 것도 좋아요.";
+      s4label = "매입 전략: 단기 관망 권고";
+      s4body = "단기 하락 신호가 감지되고 있습니다. 추이를 좀 더 확인한 후 매입 여부를 결정하는 것이 안전합니다.";
     } else {
-      s4 = "🔍 상황 지켜보기: 지금은 뚜렷한 방향이 없는 상태예요. 한 번에 많이 사기보다는 조금씩 나눠서 매입하거나, 며칠 더 추이를 보고 결정하시길 권해요.";
+      s4label = "매입 전략: 분할 매입 권장";
+      s4body = "가격 조정 이후 방향성이 뚜렷하지 않은 구간입니다. 대량 매입보다는 분할 매입을 통해 가격 변동 위험을 관리하는 것이 유리해 보입니다.";
     }
+    const s4 = `${s4label}\n${s4body}`;
 
     const text = [s1, s2, s3, s4].filter(Boolean).join("\n\n");
     setBriefing({ text, loading: false, error: null, generatedAt: new Date() });
@@ -563,11 +575,20 @@ export default function App() {
                 <div className="error-state small">브리핑 생성 실패: {briefing.error}</div>
               ) : briefing.text ? (
                 <div className="briefing-content">
-                  <p className="briefing-text">
-                    {briefing.text.split("\n\n").map((para, i) => (
-                      <span key={i} style={{ display: "block", marginBottom: i < briefing.text.split("\n\n").length - 1 ? "10px" : 0 }}>{para}</span>
-                    ))}
-                  </p>
+                  <div className="briefing-text">
+                    {briefing.text.split("\n\n").map((para, i) => {
+                      const isLast = i === briefing.text.split("\n\n").length - 1;
+                      if (isLast && para.includes("\n")) {
+                        const [label, ...rest] = para.split("\n");
+                        return (
+                          <p key={i} className="briefing-para briefing-strategy">
+                            <strong>{label}</strong><br />{rest.join(" ")}
+                          </p>
+                        );
+                      }
+                      return <p key={i} className="briefing-para">{para}</p>;
+                    })}
+                  </div>
                   <div className="briefing-features">
                     {[
                       { label: "ICE 선물가", val: market?.arabica_close?.toFixed(2) ? `${market.arabica_close.toFixed(2)}¢` : "–" },
