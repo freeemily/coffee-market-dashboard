@@ -56,7 +56,6 @@ app.get('/api/news/similar',      (req, res) => proxyNews(`/news/similar?q=${enc
 
 // ── 모델 예측 API ────────────────────────────────────────
 
-// 최신 예측 전체 (단기: horizon=1~5, 중장기: horizon>=14)
 app.get('/api/prediction/latest', async (req, res) => {
   try {
     const { rows } = await pool.query(`
@@ -74,7 +73,6 @@ app.get('/api/prediction/latest', async (req, res) => {
   }
 });
 
-// 단기 예측 (horizon 1~5일 중 가장 최신)
 app.get('/api/prediction/short', async (req, res) => {
   try {
     const { rows } = await pool.query(`
@@ -93,7 +91,6 @@ app.get('/api/prediction/short', async (req, res) => {
   }
 });
 
-// 중장기 예측 (horizon >= 14일 중 가장 최신)
 app.get('/api/prediction/mid', async (req, res) => {
   try {
     const { rows } = await pool.query(`
@@ -109,6 +106,32 @@ app.get('/api/prediction/mid', async (req, res) => {
   } catch (err) {
     console.error('[db error] /api/prediction/mid', err);
     return res.status(500).json({ error: 'DB error', detail: err.message });
+  }
+});
+
+// ── market_daily 확인용 임시 엔드포인트 ─────────────────
+app.get('/api/debug/market-columns', async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT column_name, data_type
+      FROM information_schema.columns
+      WHERE table_name = 'market_daily'
+      ORDER BY ordinal_position
+    `);
+    return res.json({ columns: rows });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/debug/market-latest', async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT * FROM market_daily ORDER BY date DESC LIMIT 1
+    `);
+    return res.json({ row: rows[0] || null });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 });
 
