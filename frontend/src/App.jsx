@@ -757,7 +757,6 @@ export default function App() {
                 <PurchaseMatrix shortDir={modelShortDir} midDir={modelMidDir} />
               </div>
             </div>
-            </div>
 
             {/* 감성 트렌드 */}
             <div className="section-card signal-card">
