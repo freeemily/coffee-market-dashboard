@@ -712,21 +712,29 @@ export default function App() {
                       <path d="M280,30 C310,24 350,18 400,12" fill="none" stroke="#4a3728" strokeWidth="1.5" strokeDasharray="5 3" opacity="0.7"/>
                       <circle cx="280" cy="30" r="3" fill="#4a3728" opacity="0.6"/>
                     </svg>
-                    {modelPrediction.loading
-                      ? <div className="chart-overlay-text">예측 데이터 로딩 중...</div>
-                      : modelPrediction.short
-                        ? <div className="chart-overlay-text">
-                            {modelPrediction.short.direction_label || (modelShortDir === 'up' ? '상승' : '하락')} ·{' '}
-                            상승확률 {(modelShortProb * 100).toFixed(1)}% ·{' '}
-                            {modelPrediction.short.prediction_for_date} 기준
-                          </div>
-                        : <div className="chart-overlay-text">단기 예측 데이터 없음</div>}
                   </div>
                   <div className="chart-meta-row">
                     <span className="chart-meta-item"><span className="chart-legend-dot real"/>실제가</span>
                     <span className="chart-meta-item"><span className="chart-legend-dash"/>단기 예측</span>
                     <span className="chart-meta-tag">1일 후 예측 · ARIMA+XGB</span>
                   </div>
+                  {!modelPrediction.loading && (
+                    <div className="chart-pred-summary">
+                      {modelPrediction.short ? (
+                        <>
+                          <span className={`chart-pred-dir ${modelShortDir === 'up' ? 'bullish' : 'bearish'}`}>
+                            {modelPrediction.short.direction_label || (modelShortDir === 'up' ? '상승' : '하락')}
+                          </span>
+                          <span className="chart-pred-sep">·</span>
+                          <span>상승확률 <strong>{(modelShortProb * 100).toFixed(1)}%</strong></span>
+                          <span className="chart-pred-sep">·</span>
+                          <span className="chart-pred-date">{modelPrediction.short.prediction_for_date?.slice(0, 10)} 기준</span>
+                        </>
+                      ) : (
+                        <span className="chart-pred-empty">단기 예측 데이터 없음</span>
+                      )}
+                    </div>
+                  )}
                 </>
               ) : (
                 <>
@@ -744,22 +752,30 @@ export default function App() {
                       <path d="M200,46 C240,36 290,24 400,18" fill="none" stroke="#4a3728" strokeWidth="1.5" strokeDasharray="6 3" opacity="0.65"/>
                       <circle cx="200" cy="46" r="3" fill="#4a3728" opacity="0.6"/>
                     </svg>
-                    {modelPrediction.loading
-                      ? <div className="chart-overlay-text">예측 데이터 로딩 중...</div>
-                      : modelPrediction.mid
-                        ? <div className="chart-overlay-text">
-                            {modelPrediction.mid.direction_label || (modelMidDir === 'up' ? '상승' : '하락')} ·{' '}
-                            상승확률 {(modelPrediction.mid.probability_up * 100).toFixed(1)}% ·{' '}
-                            {modelPrediction.mid.prediction_for_date} 기준
-                          </div>
-                        : <div className="chart-overlay-text">중장기 예측 데이터 없음</div>}
                   </div>
                   <div className="chart-meta-row">
                     <span className="chart-meta-item"><span className="chart-legend-dot real"/>실제가</span>
-                    <span className="chart-meta-item"><span className="chart-legend-dash"/>중장기 예측</span>
+                    <span className="chart-meta-item"><span className="chart-legend-dash"/>장기 예측</span>
                     <span className="chart-meta-item"><span className="chart-legend-band"/>예측 범위</span>
                     <span className="chart-meta-tag">20일 후 예측 · XGBoost</span>
                   </div>
+                  {!modelPrediction.loading && (
+                    <div className="chart-pred-summary">
+                      {modelPrediction.mid ? (
+                        <>
+                          <span className={`chart-pred-dir ${modelMidDir === 'up' ? 'bullish' : 'bearish'}`}>
+                            {modelPrediction.mid.direction_label || (modelMidDir === 'up' ? '상승' : '하락')}
+                          </span>
+                          <span className="chart-pred-sep">·</span>
+                          <span>상승확률 <strong>{(modelPrediction.mid.probability_up * 100).toFixed(1)}%</strong></span>
+                          <span className="chart-pred-sep">·</span>
+                          <span className="chart-pred-date">{modelPrediction.mid.prediction_for_date?.slice(0, 10)} 기준</span>
+                        </>
+                      ) : (
+                        <span className="chart-pred-empty">장기 예측 데이터 없음</span>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
 
