@@ -27,7 +27,7 @@ const mockForecast = {
 
   mid_term_period: 14,
 
-  model_name: "XGBoost",
+  model_name: "ARIMA + XGBoost",
 
   feature_importance: [
     {
