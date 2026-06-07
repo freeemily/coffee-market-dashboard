@@ -1,111 +1,160 @@
-const express = require('express');
-const cors = require('cors');
+const express = require("express");
+const cors = require("cors");
 
 const app = express();
-
-const PORT = process.env.PORT || 3001;
-const NEWS_API_BASE = process.env.NEWS_API_BASE || 'http://34.50.27.50:8000';
 
 app.use(cors());
 app.use(express.json());
 
-async function proxyNews(path, res) {
+const PORT = process.env.PORT || 8080;
+
+const NEWS_PIPELINE_URL =
+  "http://34.50.27.50:8000";
+
+/*
+====================================
+TEMP MOCK DATA
+모델 API 들어오면 제거
+====================================
+*/
+
+const mockForecast = {
+  probability_up: 58,
+
+  short_term_direction: "UP",
+
+  mid_term_direction: "UP",
+
+  mid_term_period: 14,
+
+  model_name: "XGBoost",
+
+  feature_importance: [
+    {
+      feature: "USD/KRW",
+      importance: 31,
+    },
+    {
+      feature: "News Sentiment",
+      importance: 24,
+    },
+    {
+      feature: "Arabica Futures",
+      importance: 18,
+    },
+    {
+      feature: "Brazil Supply",
+      importance: 15,
+    },
+    {
+      feature: "Weather Risk",
+      importance: 12,
+    },
+  ],
+};
+
+const mockMarketSnapshot = {
+  arabica_close: 274.45,
+
+  arabica_pct_change: 0.44,
+
+  usdkrw: 1378.2,
+
+  usdkrw_pct_change: -0.12,
+};
+
+app.get("/api/dashboard", async (req, res) => {
   try {
-    const url = `${NEWS_API_BASE}${path}`;
+    const [
+      signalRes,
+      newsRes,
+      trendingRes,
+      similarRes,
+    ] = await Promise.all([
+      fetch(
+        `${NEWS_PIPELINE_URL}/news/signal?days=30`
+      ),
 
-    console.log('[proxy]', url);
+      fetch(
+        `${NEWS_PIPELINE_URL}/news/today`
+      ),
 
-    const controller = new AbortController();
+      fetch(
+        `${NEWS_PIPELINE_URL}/news/trending?days=7`
+      ),
 
-    const timer = setTimeout(() => {
-      controller.abort();
-    }, 10000);
+      fetch(
+        `${NEWS_PIPELINE_URL}/news/similar/today?top_n=3`
+      ),
+    ]);
 
-    const response = await fetch(url, {
-      signal: controller.signal,
+    const signal = signalRes.ok
+      ? await signalRes.json()
+      : null;
+
+    const news = newsRes.ok
+      ? await newsRes.json()
+      : { news: [] };
+
+    const trending = trendingRes.ok
+      ? await trendingRes.json()
+      : { trending: [] };
+
+    const similar = similarRes.ok
+      ? await similarRes.json()
+      : { results: [] };
+
+    res.json({
+      marketSnapshot:
+        mockMarketSnapshot,
+
+      market: {
+        signal,
+
+        news: news.news || [],
+
+        trending:
+          trending.trending || [],
+
+        similarEvents:
+          similar.results || [],
+      },
+
+      forecast: mockForecast,
     });
-
-    clearTimeout(timer);
-
-    if (!response.ok) {
-      const text = await response.text();
-
-      console.error(
-        '[proxy error]',
-        response.status,
-        text
-      );
-
-      return res.status(response.status).json({
-        error: text,
-      });
-    }
-
-    const data = await response.json();
-
-    return res.json(data);
   } catch (err) {
-    console.error('[proxy catch]', err);
+    console.error(err);
 
-    return res.status(502).json({
-      error: 'News API unavailable',
-      detail: err.message,
+    res.status(500).json({
+      error: "Dashboard Load Error",
     });
   }
-}
-
-app.get('/api/news/today', (req, res) => {
-  proxyNews('/news/today', res);
 });
 
-app.get('/api/news/signal', (req, res) => {
-  proxyNews(
-    `/news/signal?days=${req.query.days || 30}`,
-    res
-  );
-});
+app.get("/api/search", async (req, res) => {
+  try {
+    const q = req.query.q;
 
-app.get('/api/news/trending', (req, res) => {
-  proxyNews(
-    `/news/trending?days=${req.query.days || 7}`,
-    res
-  );
-});
+    const result = await fetch(
+      `${NEWS_PIPELINE_URL}/news/search?q=${encodeURIComponent(
+        q
+      )}&top_k=10`
+    );
 
-app.get('/api/news/similar/today', (req, res) => {
-  proxyNews(
-    `/news/similar/today?top_n=${req.query.top_n || 3}`,
-    res
-  );
-});
+    const data = await result.json();
 
-app.get('/api/news/search', (req, res) => {
-  proxyNews(
-    `/news/search?q=${encodeURIComponent(
-      req.query.q || ''
-    )}&top_k=${req.query.top_k || 5}`,
-    res
-  );
-});
+    res.json(data);
+  } catch (err) {
+    console.error(err);
 
-app.get('/api/news/similar', (req, res) => {
-  proxyNews(
-    `/news/similar?q=${encodeURIComponent(
-      req.query.q || ''
-    )}&top_k=${req.query.top_k || 3}`,
-    res
-  );
-});
-
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-  });
+    res.status(500).json({
+      error: "Search Error",
+    });
+  }
 });
 
 app.listen(PORT, () => {
   console.log(
-    `Bean Pulse backend running on port ${PORT}`
+    `Server Running : ${PORT}`
   );
 });
