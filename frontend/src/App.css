@@ -165,7 +165,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  min-height: 0;   /* grid stretch 높이 안에서 flex shrink 허용 */
 }
 .col-right { display: flex; flex-direction: column; gap: 14px; }
 
@@ -294,10 +293,8 @@ body {
 .news-section-card {
   padding: 0;
   overflow: hidden;
-  flex: 1;               /* col-left 의 남은 세로 공간을 모두 차지 */
   display: flex;
   flex-direction: column;
-  min-height: 0;         /* flex 자식이 shrink 가능하도록 */
 }
 
 .news-section-card .tab-bar {
@@ -306,7 +303,6 @@ body {
   flex-shrink: 0;
 }
 
-/* 내부 스크롤 영역: news-section-card 남은 높이를 모두 채움 */
 .news-scroll-area {
   flex: 1;
   overflow-y: auto;
