@@ -159,10 +159,29 @@ body {
   grid-template-columns: 1fr 460px;
   gap: 18px;
   align-items: stretch;
+  height: calc(100vh - 180px);
+  min-height: 600px;
 }
 
-.col-left { display: flex; flex-direction: column; gap: 14px; height: 100%; }
-.col-right { display: flex; flex-direction: column; gap: 14px; }
+.col-left {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  overflow: hidden;
+}
+.col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg4) transparent;
+}
+.col-right::-webkit-scrollbar { width: 5px; }
+.col-right::-webkit-scrollbar-track { background: transparent; }
+.col-right::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 4px; }
 
 /* ---- SECTION CARD ---- */
 .section-card {
@@ -834,8 +853,9 @@ body {
 
 /* ---- RESPONSIVE ---- */
 @media (max-width: 1100px) {
-  .grid-main { grid-template-columns: 1fr; }
-  .col-right { order: -1; }
+  .grid-main { grid-template-columns: 1fr; height: auto; min-height: unset; }
+  .col-right { order: -1; overflow-y: visible; }
+  .col-left { overflow: visible; }
   .kpi-row { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 600px) {
