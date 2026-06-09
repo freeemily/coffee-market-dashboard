@@ -981,3 +981,11 @@ body {
   border-bottom: 1px solid var(--border);
   letter-spacing: -0.01em;
 }
+
+/* ---- BRIEFING NO DATA ---- */
+.briefing-no-data {
+  padding: 20px 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
