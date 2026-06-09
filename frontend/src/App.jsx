@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "https://coffee-market-dashboard-production.up.railway.app";
@@ -265,8 +265,6 @@ export default function App() {
   const [selectedNews, setSelectedNews] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [now, setNow] = useState(new Date());
-  const colRightRef = useRef(null);
-  const [colRightHeight, setColRightHeight] = useState(null);
 
   // 모델 예측 데이터
   const [modelPrediction, setModelPrediction] = useState({ short: null, mid: null, loading: true, error: null });
@@ -285,17 +283,6 @@ export default function App() {
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(t);
-  }, []);
-
-  useEffect(() => {
-    const measure = () => {
-      if (colRightRef.current) {
-        setColRightHeight(colRightRef.current.offsetHeight);
-      }
-    };
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
   }, []);
 
   const fetchJSON = useCallback(async (path, onData, key) => {
@@ -547,7 +534,7 @@ export default function App() {
             <SearchBar onSearch={handleSearch} />
 
             {/* 뉴스 피드 / 유사 과거 사건 탭 — 스크롤 박스 */}
-            <div className="section-card news-section-card" style={colRightHeight ? { height: `${colRightHeight}px` } : {}}>
+            <div className="section-card news-section-card">
               <div className="tab-bar">
                 <button className={`tab-btn ${activeTab === "news" ? "active" : ""}`} onClick={() => setActiveTab("news")}>
                   뉴스 피드
@@ -615,7 +602,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="col-right" ref={colRightRef}>
+          <div className="col-right">
             {/* 가격 추이 + 모델 예측 */}
             <div className="section-card chart-card">
               <div className="section-header">

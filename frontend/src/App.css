@@ -161,11 +161,7 @@ body {
   align-items: stretch;
 }
 
-.col-left {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
+.col-left { display: flex; flex-direction: column; gap: 14px; height: 100%; }
 .col-right { display: flex; flex-direction: column; gap: 14px; }
 
 /* ---- SECTION CARD ---- */
@@ -293,8 +289,10 @@ body {
 .news-section-card {
   padding: 0;
   overflow: hidden;
+  flex: 1;          /* col-left 남은 공간 모두 차지 */
   display: flex;
   flex-direction: column;
+  min-height: 0;    /* flex 자식이 shrink 가능하도록 */
 }
 
 .news-section-card .tab-bar {
@@ -303,10 +301,11 @@ body {
   flex-shrink: 0;
 }
 
+/* 스크롤 영역: col-right 하단과 라인 맞춤 — 남은 높이 전부 사용 */
 .news-scroll-area {
   flex: 1;
   overflow-y: auto;
-  min-height: 0;
+  min-height: 200px;
   padding: 12px 20px 16px;
   scrollbar-width: thin;
   scrollbar-color: var(--bg4) transparent;
