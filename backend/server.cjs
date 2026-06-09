@@ -5,7 +5,7 @@ const { Pool } = require('pg');
 const app = express();
 
 const PORT = process.env.PORT || 3001;
-const NEWS_API_BASE = process.env.NEWS_API_BASE || 'http://34.50.27.50:8000';
+const NEWS_API_BASE = process.env.NEWS_API_BASE ||  'http://34.22.105.171:8000';
 
 const pool = new Pool({
   host:     process.env.DB_HOST,
