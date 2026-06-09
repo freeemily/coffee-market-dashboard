@@ -159,29 +159,15 @@ body {
   grid-template-columns: 1fr 460px;
   gap: 18px;
   align-items: stretch;
-  height: calc(100vh - 180px);
-  min-height: 600px;
 }
 
 .col-left {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  min-height: 0;
-  overflow: hidden;
+  min-height: 0;   /* grid stretch 높이 안에서 flex shrink 허용 */
 }
-.col-right {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  min-height: 0;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--bg4) transparent;
-}
-.col-right::-webkit-scrollbar { width: 5px; }
-.col-right::-webkit-scrollbar-track { background: transparent; }
-.col-right::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 4px; }
+.col-right { display: flex; flex-direction: column; gap: 14px; }
 
 /* ---- SECTION CARD ---- */
 .section-card {
@@ -308,10 +294,10 @@ body {
 .news-section-card {
   padding: 0;
   overflow: hidden;
-  flex: 1;          /* col-left 남은 공간 모두 차지 */
+  flex: 1;               /* col-left 의 남은 세로 공간을 모두 차지 */
   display: flex;
   flex-direction: column;
-  min-height: 0;    /* flex 자식이 shrink 가능하도록 */
+  min-height: 0;         /* flex 자식이 shrink 가능하도록 */
 }
 
 .news-section-card .tab-bar {
@@ -320,11 +306,11 @@ body {
   flex-shrink: 0;
 }
 
-/* 스크롤 영역: col-right 하단과 라인 맞춤 — 남은 높이 전부 사용 */
+/* 내부 스크롤 영역: news-section-card 남은 높이를 모두 채움 */
 .news-scroll-area {
   flex: 1;
   overflow-y: auto;
-  min-height: 200px;
+  min-height: 0;
   padding: 12px 20px 16px;
   scrollbar-width: thin;
   scrollbar-color: var(--bg4) transparent;
@@ -853,9 +839,8 @@ body {
 
 /* ---- RESPONSIVE ---- */
 @media (max-width: 1100px) {
-  .grid-main { grid-template-columns: 1fr; height: auto; min-height: unset; }
-  .col-right { order: -1; overflow-y: visible; }
-  .col-left { overflow: visible; }
+  .grid-main { grid-template-columns: 1fr; }
+  .col-right { order: -1; }
   .kpi-row { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 600px) {
