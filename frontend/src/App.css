@@ -471,22 +471,7 @@ body {
   border-radius: 4px;
 }
 
-.chart-tabs { display: flex; gap: 3px; margin-left: auto; }
-.chart-tab {
-  font-size: 11px; font-family: var(--font-mono);
-  padding: 3px 9px; border-radius: 4px;
-  color: var(--text-muted); cursor: pointer;
-  border: 1px solid var(--border);
-  background: none;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-.chart-tab:hover { color: var(--text-secondary); background: var(--bg3); }
-.chart-tab.active {
-  background: var(--accent-dim);
-  color: var(--accent);
-  border-color: rgba(74,55,40,0.25);
-  font-weight: 500;
-}
+
 
 /* ---- MATRIX ---- */
 .matrix-section { margin-top: 4px; }
@@ -669,54 +654,182 @@ body {
 .modal-summary p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
 .modal-entities { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 
-/* ---- CHART PLACEHOLDER SVG ---- */
-.chart-placeholder-inner {
-  position: relative;
+/* ---- PRED BLOCK (가격 추이 + 모델 예측) ---- */
+.pred-block {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 10px;
 }
-.placeholder-chart-svg {
-  width: 100%; height: 100%;
-  position: absolute; inset: 0;
-  display: block;
+.pred-block:last-of-type { margin-bottom: 0; }
+
+.pred-block-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+}
+.pred-block-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.pred-block-meta {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  margin-left: auto;
+  background: var(--bg4);
+  padding: 1px 7px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
 }
 
-/* ---- CHART META ROW (범례) ---- */
-.chart-meta-row {
-  display: flex; align-items: center; gap: 10px;
-  margin-top: 8px; margin-bottom: 12px;
-  flex-wrap: wrap;
+.pred-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
-.chart-meta-item {
-  display: flex; align-items: center; gap: 4px;
-  font-size: 11px; color: var(--text-secondary);
+
+/* 방향 + 확률 히어로 */
+.pred-hero {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
-.chart-legend-dot {
-  display: inline-block;
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
+.pred-direction {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
-.chart-legend-dot.real { background: var(--text-muted); }
-.chart-legend-dash {
-  display: inline-block;
-  width: 16px; height: 0;
-  border-top: 2px dashed var(--accent);
-  opacity: 0.65;
-  flex-shrink: 0;
+.pred-prob {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
 }
-.chart-legend-band {
-  display: inline-block;
-  width: 14px; height: 8px;
-  background: rgba(74,55,40,0.12);
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-.chart-meta-tag {
-  margin-left: auto;
-  font-size: 10px; font-family: var(--font-mono);
+.pred-date {
+  font-size: 11px;
   color: var(--text-muted);
+  margin-left: auto;
+  font-family: var(--font-mono);
+}
+
+/* 메트릭 바 */
+.pred-metric { display: flex; flex-direction: column; gap: 5px; }
+
+.pred-metric-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+.pred-metric-label span:last-child {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+.pred-metric-sub {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-left: 3px;
+}
+.pred-metric-label-only {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 5px;
+}
+
+.pred-bar-track {
+  height: 8px;
+  background: var(--bg4);
+  border-radius: 100px;
+  overflow: visible;
+  position: relative;
+}
+.pred-bar-fill {
+  height: 100%;
+  border-radius: 100px;
+  transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+}
+.pred-bar-fill.bullish { background: var(--bullish); }
+.pred-bar-fill.bearish { background: var(--bearish); }
+
+/* RSI 특화 */
+.rsi-track { overflow: visible; }
+.rsi-zone-low {
+  position: absolute; left: 0; top: 0;
+  width: 30%; height: 100%;
+  background: var(--bullish);
+  opacity: 0.12;
+  border-radius: 100px 0 0 100px;
+}
+.rsi-zone-high {
+  position: absolute; right: 0; top: 0;
+  width: 30%; height: 100%;
+  background: var(--bearish);
+  opacity: 0.12;
+  border-radius: 0 100px 100px 0;
+}
+.rsi-thumb {
+  position: absolute;
+  top: 50%; transform: translateY(-50%);
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--bg2);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  transition: left 0.5s ease;
+}
+.rsi-thumb.bullish { background: var(--bullish); }
+.rsi-thumb.bearish { background: var(--bearish); }
+.rsi-thumb.neutral { background: var(--accent); }
+
+.pred-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+/* 단기 vs 중장기 비교 바 */
+.pred-compare { display: flex; flex-direction: column; gap: 6px; }
+.pred-compare-bars { display: flex; flex-direction: column; gap: 6px; }
+.pred-compare-item { display: flex; flex-direction: column; gap: 3px; }
+.pred-compare-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+/* stat row (ARIMA 잔차, DXY) */
+.pred-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
   background: var(--bg3);
-  padding: 2px 7px; border-radius: 4px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
+}
+.pred-stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.pred-stat-val {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: auto;
+}
+.pred-stat-note {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
 
 /* ---- RESPONSIVE ---- */
@@ -731,4 +844,148 @@ body {
   .kpi-row { grid-template-columns: 1fr 1fr; gap: 8px; }
   .logo-sub { display: none; }
   .news-scroll-area { max-height: 380px; }
+}
+
+/* ---- AI BRIEFING LIVE ---- */
+.briefing-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.briefing-text {
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+}
+.briefing-generating {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.briefing-refresh-btn {
+  margin-left: auto;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.briefing-refresh-btn:hover:not(:disabled) {
+  background: var(--bg2);
+  color: var(--text-primary);
+}
+.briefing-refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.briefing-features .feature-tag em {
+  font-style: normal;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-primary);
+  background: rgba(74,55,40,0.08);
+  border-radius: 3px;
+  padding: 0 4px;
+  margin-left: 3px;
+}
+
+/* ---- BRIEFING TEXT ---- */
+.briefing-para {
+  margin: 0 0 10px 0;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--text-primary);
+  text-align: left;
+}
+.briefing-para:last-child { margin-bottom: 0; }
+.briefing-strategy {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.briefing-strategy strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ---- BRIEFING FEATURE TAGS WITH COLOR ---- */
+.feature-tag-colored { border: 1px solid var(--border); }
+.feature-tag-colored.bullish {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #16a34a;
+}
+.feature-tag-colored.bullish em { background: rgba(34, 197, 94, 0.15); color: #15803d; }
+.feature-tag-colored.bearish {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #dc2626;
+}
+.feature-tag-colored.bearish em { background: rgba(239, 68, 68, 0.15); color: #b91c1c; }
+
+/* ---- CHART PREDICTION SUMMARY (below chart) ---- */
+.chart-pred-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  margin-top: 6px;
+  background: var(--bg3);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+.chart-pred-dir {
+  font-weight: 600;
+  font-size: 13px;
+}
+.chart-pred-dir.bullish { color: #16a34a; }
+.chart-pred-dir.bearish { color: #dc2626; }
+.chart-pred-sep { color: var(--border); }
+.chart-pred-summary strong { color: var(--text-primary); font-weight: 600; }
+.chart-pred-date { color: var(--text-muted); font-size: 11.5px; }
+.chart-pred-empty { color: var(--text-muted); font-size: 12px; }
+
+/* 차트: 실제 데이터 미연동 안내 */
+.chart-no-data-msg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80px;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  background: var(--bg3);
+}
+/* briefing DB title */
+.briefing-title-db {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: -0.01em;
+}
+
+/* ---- BRIEFING NO DATA ---- */
+.briefing-no-data {
+  padding: 20px 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
 }
