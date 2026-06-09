@@ -377,10 +377,9 @@ export default function App() {
             return;
           }
         }
-        // DB에 브리핑 데이터 없음
         setBriefing(prev => ({ ...prev, loading: false }));
       } catch (e) {
-        setBriefing(prev => ({ ...prev, loading: false, error: e.message }));
+        setBriefing(prev => ({ ...prev, loading: false }));
       }
     })();
   }, []);
