@@ -115,6 +115,35 @@ app.get('/api/market/latest', async (req, res) => {
   }
 });
 
+// ── 데일리 브리핑 DB 조회 ────────────────────────────────
+app.get('/api/briefing/latest', async (req, res) => {
+  try {
+    // daily_briefing 테이블의 컬럼 목록을 먼저 확인
+    const colRes = await pool.query(`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'daily_briefing'
+      ORDER BY ordinal_position
+    `);
+    const cols = colRes.rows.map(r => r.column_name);
+
+    // 최신 row 조회 (created_at 또는 briefing_date 기준)
+    const orderCol = cols.includes('created_at') ? 'created_at'
+                   : cols.includes('briefing_date') ? 'briefing_date'
+                   : cols.includes('date') ? 'date'
+                   : 'id';
+
+    const { rows } = await pool.query(
+      `SELECT * FROM daily_briefing ORDER BY ${orderCol} DESC LIMIT 1`
+    );
+
+    if (!rows.length) return res.json({ briefing: null, columns: cols });
+    return res.json({ briefing: rows[0], columns: cols });
+  } catch (err) {
+    return res.status(500).json({ error: 'DB error', detail: err.message });
+  }
+});
+
 // ── Anthropic 브리핑 프록시 ──────────────────────────────
 app.post('/api/briefing', async (req, res) => {
   const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;

@@ -437,15 +437,44 @@ export default function App() {
     setBriefing({ text, loading: false, error: null, generatedAt: new Date() });
   }, [market, modelPrediction, signal, avgSent, sig, todayCount]);
 
-  const [briefing, setBriefing] = useState({ text: null, loading: false, error: null, generatedAt: null });
+  const [briefing, setBriefing] = useState({ text: null, loading: true, error: null, generatedAt: null, fromDB: false });
 
-  // 데이터가 로드되면 자동 브리핑 생성
+  // 1순위: DB에서 최신 daily_briefing 조회
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/briefing/latest`);
+        const data = await res.json();
+
+        if (data.briefing) {
+          const row = data.briefing;
+          const text = row.content ?? null;
+          const title = row.title ?? null;
+          const generatedAt = row.briefing_date
+            ? new Date(row.briefing_date)
+            : row.created_at ? new Date(row.created_at) : null;
+
+          if (text) {
+            setBriefing({ text, title, loading: false, error: null, generatedAt, fromDB: true });
+            return;
+          }
+        }
+        // DB에 데이터 없으면 로딩 상태 해제 → 아래 useEffect에서 템플릿 생성
+        setBriefing(prev => ({ ...prev, loading: false }));
+      } catch (e) {
+        // API 오류 시에도 템플릿 fallback 허용
+        setBriefing(prev => ({ ...prev, loading: false }));
+      }
+    })();
+  }, []);
+
+  // 2순위 fallback: DB 브리핑 없고 시장 데이터 로드 완료 시 템플릿 생성
   useEffect(() => {
     const ready = market !== null && !modelPrediction.loading && !loading.signal;
-    if (ready && !briefing.text) {
+    if (ready && !briefing.text && !briefing.loading) {
       generateBriefing();
     }
-  }, [market, modelPrediction.loading, loading.signal]);
+  }, [market, modelPrediction.loading, loading.signal, briefing.text, briefing.loading]);
 
   const nowStr = now.toLocaleString("ko-KR", {
     year: "numeric", month: "2-digit", day: "2-digit",
@@ -544,14 +573,17 @@ export default function App() {
                 <span className="section-title">데일리 브리핑</span>
                 {briefing.generatedAt && (
                   <span className="section-note">
-                    {briefing.generatedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })} 생성
+                    {briefing.fromDB
+                      ? briefing.generatedAt.toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" }) + " 발행"
+                      : briefing.generatedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }) + " 생성"
+                    }
                   </span>
                 )}
                 <button
                   className="briefing-refresh-btn"
                   onClick={generateBriefing}
                   disabled={briefing.loading}
-                  title="브리핑 재생성"
+                  title="템플릿으로 재생성"
                 >
                   {briefing.loading ? "생성중..." : "↻ 재생성"}
                 </button>
@@ -560,12 +592,15 @@ export default function App() {
               {briefing.loading ? (
                 <div className="briefing-generating">
                   <div className="spinner" />
-                  <span>AI가 시장 데이터를 분석하고 있습니다...</span>
+                  <span>브리핑을 불러오는 중입니다...</span>
                 </div>
               ) : briefing.error ? (
                 <div className="error-state small">브리핑 생성 실패: {briefing.error}</div>
               ) : briefing.text ? (
                 <div className="briefing-content">
+                  {briefing.title && (
+                    <p className="briefing-title-db">{briefing.title}</p>
+                  )}
                   <div className="briefing-text">
                     {briefing.text.split("\n\n").map((para, i) => {
                       const isLast = i === briefing.text.split("\n\n").length - 1;

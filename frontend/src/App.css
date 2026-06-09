@@ -971,3 +971,13 @@ body {
   border-radius: 6px;
   background: var(--bg3);
 }
+/* briefing DB title */
+.briefing-title-db {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: -0.01em;
+}
