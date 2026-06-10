@@ -144,43 +144,6 @@ app.get('/api/briefing/latest', async (req, res) => {
   }
 });
 
-// ── Anthropic 브리핑 프록시 ──────────────────────────────
-app.post('/api/briefing', async (req, res) => {
-  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-  if (!ANTHROPIC_API_KEY) {
-    return res.status(500).json({ error: 'ANTHROPIC_API_KEY 환경변수가 설정되지 않았습니다.' });
-  }
-  try {
-    const { prompt } = req.body;
-    if (!prompt) return res.status(400).json({ error: 'prompt 필드가 필요합니다.' });
-
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    });
-
-    if (!response.ok) {
-      const text = await response.text();
-      return res.status(response.status).json({ error: text });
-    }
-    const data = await response.json();
-    const text = (data.content || []).map(b => b.text || '').join('');
-    return res.json({ text });
-  } catch (err) {
-    console.error('[briefing error]', err);
-    return res.status(502).json({ error: err.message });
-  }
-});
-
 // ── Health ───────────────────────────────────────────────
 app.get('/health', async (req, res) => {
   let dbOk = false;

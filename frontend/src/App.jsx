@@ -355,7 +355,7 @@ export default function App() {
   const avgSent = signal?.avg_sentiment;
   const todayCount = todayNews.length;
 
-  const [briefing, setBriefing] = useState({ text: null, loading: true, error: null, generatedAt: null, fromDB: false });
+  const [briefing, setBriefing] = useState({ text: null, loading: true, error: null, generatedAt: null });
 
   // DB에서 최신 daily_briefing 조회
   useEffect(() => {
@@ -373,7 +373,7 @@ export default function App() {
             : row.created_at ? new Date(row.created_at) : null;
 
           if (text) {
-            setBriefing({ text, title, loading: false, error: null, generatedAt, fromDB: true });
+            setBriefing({ text, title, loading: false, error: null, generatedAt });
             return;
           }
         }
@@ -493,7 +493,7 @@ export default function App() {
                   <span>브리핑을 불러오는 중입니다...</span>
                 </div>
               ) : briefing.error ? (
-                <div className="error-state small">브리핑 생성 실패: {briefing.error}</div>
+                <div className="error-state small">브리핑 로드 실패: {briefing.error}</div>
               ) : briefing.text ? (
                 <div className="briefing-content">
                   {briefing.title && (
